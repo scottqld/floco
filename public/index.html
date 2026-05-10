@@ -195,6 +195,13 @@
         <label class="field-label required" for="issued_to_name">Name</label>
         <input type="text" id="issued_to_name" name="issued_to_name" placeholder="Full name" required autocomplete="name">
       </div>
+      <div class="field-group">
+        <label class="field-label">Signature</label>
+        <div class="sig-container">
+          <canvas id="sigIssuedTo" class="sig-canvas" width="400" height="150"></canvas>
+          <button type="button" class="sig-clear-btn" data-target="sigIssuedTo">Clear</button>
+        </div>
+      </div>
     </section>
 
     <!-- Section 7: Special Instructions -->

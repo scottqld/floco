@@ -1,4 +1,4 @@
-import { generatePermitDocument } from './generateDocument.js';
+import { generatePDF } from './generatePDF.js';
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 
@@ -60,6 +60,27 @@ function buildEmailBody(d) {
   ].join('\n');
 }
 
+// ── Submission log ─────────────────────────────────────────────────────────────
+
+async function logSubmission(env, d, timestamp) {
+  try {
+    const raw  = await env.CLIENTS_KV.get('log');
+    const log  = raw ? JSON.parse(raw) : [];
+    log.unshift({
+      id:          timestamp,
+      timestamp:   new Date().toISOString(),
+      client:      d.client      || '',
+      site:        d.site        || '',
+      issuedBy:    d.issued_by_name  || '',
+      issuedTo:    d.issued_to_name  || '',
+      validFrom:   d.valid_from_date || '',
+      dischargeTo: d.discharge_to   || '',
+    });
+    if (log.length > 500) log.splice(500);
+    await env.CLIENTS_KV.put('log', JSON.stringify(log));
+  } catch { /* non-fatal */ }
+}
+
 // ── Main handler ───────────────────────────────────────────────────────────────
 
 export default {
@@ -70,6 +91,12 @@ export default {
     // CORS preflight
     if (method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(env) });
+    }
+
+    // ── GET /api/log ──────────────────────────────────────────────────────────
+    if (method === 'GET' && url.pathname === '/api/log') {
+      const raw = await env.CLIENTS_KV.get('log');
+      return json(raw ? JSON.parse(raw) : [], 200, env);
     }
 
     // ── GET /api/clients ──────────────────────────────────────────────────────
@@ -116,12 +143,11 @@ export default {
       try {
         const formData = await request.json();
 
-        const docBuffer = await generatePermitDocument(formData);
+        const docBuffer = await generatePDF(formData);
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        const filename  = `Permit-to-Discharge-${timestamp}.docx`;
+        const filename  = `Permit-to-Discharge-${timestamp}.pdf`;
 
-        // Build Resend attachments array
         const attachments = [
           {
             filename,
@@ -164,6 +190,8 @@ export default {
           const errText = await resendRes.text();
           throw new Error(`Resend error ${resendRes.status}: ${errText}`);
         }
+
+        await logSubmission(env, formData, timestamp);
 
         return json({ success: true, message: 'Permit submitted and emailed successfully.' }, 200, env);
       } catch (err) {

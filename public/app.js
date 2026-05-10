@@ -92,8 +92,9 @@ function saveDraft() {
   const draft = {};
   for (const [k, v] of fd.entries()) draft[k] = v;
 
-  // Save signature
-  draft._sig_issuer = sigIssuer ? sigIssuer.toDataURL() : null;
+  // Save signatures
+  draft._sig_issuer    = sigIssuer    ? sigIssuer.toDataURL()    : null;
+  draft._sig_issued_to = sigIssuedTo  ? sigIssuedTo.toDataURL()  : null;
 
   // Try saving photos (may exceed quota — handle gracefully)
   try {
@@ -146,8 +147,9 @@ function loadDraft() {
     if (radio) radio.checked = true;
   }
 
-  // Restore signature
-  if (draft._sig_issuer) sigIssuer.loadFromDataURL(draft._sig_issuer);
+  // Restore signatures
+  if (draft._sig_issuer)    sigIssuer.loadFromDataURL(draft._sig_issuer);
+  if (draft._sig_issued_to) sigIssuedTo.loadFromDataURL(draft._sig_issued_to);
 
   // Restore photos
   if (draft._initial_photo) {
@@ -322,10 +324,18 @@ class SignaturePad {
   }
 }
 
-// ── Init signature pad ─────────────────────────────────────────────────────
-const sigIssuer = new SignaturePad(document.getElementById('sigIssuer'));
-document.querySelector('.sig-clear-btn').addEventListener('click', () => sigIssuer.clear());
-window.addEventListener('load', () => sigIssuer._resize());
+// ── Init signature pads ────────────────────────────────────────────────────
+const sigIssuer   = new SignaturePad(document.getElementById('sigIssuer'));
+const sigIssuedTo = new SignaturePad(document.getElementById('sigIssuedTo'));
+
+document.querySelectorAll('.sig-clear-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.target === 'sigIssuer')   sigIssuer.clear();
+    if (btn.dataset.target === 'sigIssuedTo') sigIssuedTo.clear();
+  });
+});
+
+window.addEventListener('load', () => { sigIssuer._resize(); sigIssuedTo._resize(); });
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PHOTO CAPTURE
@@ -442,6 +452,18 @@ form.addEventListener('submit', async e => {
     return;
   }
 
+  // Offline — queue for later
+  if (!navigator.onLine) {
+    const q = getQueue();
+    q.push(collectData());
+    saveQueue(q);
+    saveOperatorName();
+    clearDraft();
+    showToast('No connection — permit saved and will send when back online.', '');
+    setTimeout(() => { if (confirm('Permit queued. Reset for a new permit?')) { resetForm(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, 1500);
+    return;
+  }
+
   submitBtn.disabled = true;
   loadingOverlay.hidden = false;
 
@@ -454,6 +476,7 @@ form.addEventListener('submit', async e => {
     const json = await res.json();
 
     if (json.success) {
+      saveOperatorName();
       clearDraft();
       showToast('Permit submitted and emailed!', 'success');
       setTimeout(() => { if (confirm('Permit sent. Reset for a new permit?')) { resetForm(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, 1500);
@@ -473,6 +496,7 @@ function collectData() {
   const data = {};
   for (const [k, v] of fd.entries()) data[k] = v;
   data.issued_by_signature   = sigIssuer.toDataURL();
+  data.issued_to_signature   = sigIssuedTo.toDataURL();
   data.initial_test_photo    = singlePhotos.initial_test_photo    ?? null;
   data.after_treatment_photo = singlePhotos.after_treatment_photo ?? null;
   data.additional_photos     = [...extraPhotos];
@@ -482,6 +506,7 @@ function collectData() {
 function resetForm() {
   form.reset();
   sigIssuer.clear();
+  sigIssuedTo.clear();
   Object.keys(singlePhotos).forEach(k => delete singlePhotos[k]);
   document.getElementById('initial_test_photo_preview').innerHTML  = '';
   document.getElementById('after_treatment_photo_preview').innerHTML = '';
@@ -492,6 +517,7 @@ function resetForm() {
   document.getElementById('draftBanner').hidden = true;
   clearDraft();
   setDefaults();
+  prefillOperatorName();
 }
 
 // Draft banner — discard button
@@ -533,8 +559,62 @@ function setDefaults() {
   document.getElementById('valid_to_time').value = timeStr;
 }
 
+// ── Operator name pre-fill ─────────────────────────────────────────────────
+const OPERATOR_KEY = 'permit_operator';
+
+function prefillOperatorName() {
+  const saved = localStorage.getItem(OPERATOR_KEY);
+  if (saved) {
+    const el = document.getElementById('issued_by_name');
+    if (el && !el.value) el.value = saved;
+  }
+}
+
+function saveOperatorName() {
+  const name = document.getElementById('issued_by_name')?.value.trim();
+  if (name) localStorage.setItem(OPERATOR_KEY, name);
+}
+
+// ── Offline queue ──────────────────────────────────────────────────────────
+const QUEUE_KEY = 'permit_queue';
+
+function getQueue() {
+  try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch { return []; }
+}
+
+function saveQueue(q) {
+  try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch { /* quota */ }
+}
+
+async function processQueue() {
+  const queue = getQueue();
+  if (!queue.length) return;
+  showToast(`Sending ${queue.length} queued permit(s)…`);
+  const remaining = [];
+  for (const item of queue) {
+    try {
+      const res  = await fetch(`${API}/api/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      });
+      const json = await res.json();
+      if (!json.success) remaining.push(item);
+    } catch {
+      remaining.push(item);
+    }
+  }
+  saveQueue(remaining);
+  const sent = queue.length - remaining.length;
+  if (sent > 0) showToast(`${sent} queued permit(s) sent!`, 'success');
+  if (remaining.length > 0) showToast(`${remaining.length} permit(s) still queued — check connection.`, 'error');
+}
+
+window.addEventListener('online', processQueue);
+
 setDefaults();
 loadDraft();    // restore any saved draft (overwrites defaults if draft exists)
+prefillOperatorName();
 initClients();  // load saved sites from server
 
 // ═══════════════════════════════════════════════════════════════════════════

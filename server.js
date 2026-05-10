@@ -3,7 +3,7 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs');
-const { generatePermitDocument } = require('./generateDocument');
+const { generatePDF } = require('./generatePDF');
 
 // ── Client/site storage ────────────────────────────────────────────────────
 const CLIENTS_PATH = path.join(__dirname, 'data', 'clients.json');
@@ -64,16 +64,16 @@ app.post('/api/submit', async (req, res) => {
   try {
     const formData = req.body;
 
-    const docBuffer = await generatePermitDocument(formData);
+    const docBuffer = await generatePDF(formData);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const filename = `Permit-to-Discharge-${timestamp}.docx`;
+    const filename = `Permit-to-Discharge-${timestamp}.pdf`;
 
     const attachments = [
       {
         filename,
         content: docBuffer,
-        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        contentType: 'application/pdf',
       },
     ];
 
