@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a5276">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Permit">
+  <title>Permit to Discharge – FRM013</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-title">
+      <span class="header-sub">FRM013</span>
+      <span class="header-main">Permit to Discharge</span>
+    </div>
+  </header>
+
+  <form id="permitForm" novalidate>
+
+    <!-- Section 1: Site Details -->
+    <section class="form-section">
+      <h2 class="section-title">Site Details</h2>
+
+      <!-- Saved sites -->
+      <div class="saved-sites-block" id="savedSitesBlock">
+        <p class="field-label">Saved Sites</p>
+        <div class="site-chips" id="siteChips">
+          <span class="no-sites-msg" id="noSitesMsg">None saved yet — fill in the fields below and tap Save.</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label required" for="client">Client</label>
+        <input type="text" id="client" name="client" placeholder="Client / company name" required autocomplete="organization">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label required" for="site">Site</label>
+        <input type="text" id="site" name="site" placeholder="Site name" required autocomplete="off">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="site_address">Site Address</label>
+        <input type="text" id="site_address" name="site_address" placeholder="Street address" autocomplete="street-address">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="basin">Basin</label>
+        <input type="text" id="basin" name="basin" placeholder="Basin name / ID" autocomplete="off">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="basin_reference">Basin Reference</label>
+        <input type="text" id="basin_reference" name="basin_reference" placeholder="e.g. Yarrabilba 17/3/26" autocomplete="off">
+      </div>
+
+      <div class="save-site-row">
+        <button type="button" id="saveSiteBtn" class="btn btn-secondary btn-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save this site
+        </button>
+      </div>
+    </section>
+
+    <!-- Section 2: Discharge Details -->
+    <section class="form-section">
+      <h2 class="section-title">Discharge Details</h2>
+
+      <div class="field-group">
+        <label class="field-label required">Discharge To</label>
+        <div class="radio-group">
+          <label class="radio-option"><input type="radio" name="discharge_to" value="Sediment Pond"><span>Sediment Pond</span></label>
+          <label class="radio-option"><input type="radio" name="discharge_to" value="Waterway"><span>Waterway</span></label>
+          <label class="radio-option"><input type="radio" name="discharge_to" value="Ground"><span>Ground</span></label>
+          <label class="radio-option"><input type="radio" name="discharge_to" value="Tank"><span>Tank</span></label>
+          <label class="radio-option"><input type="radio" name="discharge_to" value="Water cart"><span>Water cart</span></label>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label required" for="valid_from_date">Valid From – Date</label>
+          <input type="date" id="valid_from_date" name="valid_from_date" required>
+        </div>
+        <div class="field-group">
+          <label class="field-label required" for="valid_from_time">Time</label>
+          <input type="time" id="valid_from_time" name="valid_from_time" required>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label" for="valid_to_date">Valid To – Date</label>
+          <input type="date" id="valid_to_date" name="valid_to_date">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="valid_to_time">Time</label>
+          <input type="time" id="valid_to_time" name="valid_to_time">
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Initial Test -->
+    <section class="form-section">
+      <h2 class="section-title">Initial Test</h2>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label" for="initial_test_ph">pH</label>
+          <div class="input-with-badge">
+            <input type="number" step="0.01" id="initial_test_ph" name="initial_test_ph" placeholder="e.g. 6.40">
+            <span class="reading-badge" id="badge_initial_ph"></span>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="initial_test_ntu">NTU</label>
+          <div class="input-with-badge">
+            <input type="number" step="0.1" id="initial_test_ntu" name="initial_test_ntu" placeholder="e.g. 264">
+            <span class="reading-badge" id="badge_initial_ntu"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Site Photo</label>
+        <div class="photo-capture-area" id="initialPhotoArea">
+          <button type="button" class="btn btn-secondary btn-photo" data-target="initial_test_photo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Take Photo
+          </button>
+          <div class="single-photo-preview" id="initial_test_photo_preview"></div>
+        </div>
+        <input type="file" class="photo-file-input" data-field="initial_test_photo" accept="image/*" capture="environment" style="display:none">
+      </div>
+    </section>
+
+    <!-- Section 4: After Treatment -->
+    <section class="form-section">
+      <h2 class="section-title">After Treatment</h2>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label" for="after_treatment_ph">pH</label>
+          <div class="input-with-badge">
+            <input type="number" step="0.01" id="after_treatment_ph" name="after_treatment_ph" placeholder="e.g. 6.90">
+            <span class="reading-badge" id="badge_after_ph"></span>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="after_treatment_ntu">NTU</label>
+          <div class="input-with-badge">
+            <input type="number" step="0.1" id="after_treatment_ntu" name="after_treatment_ntu" placeholder="e.g. 14.1">
+            <span class="reading-badge" id="badge_after_ntu"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Site Photo</label>
+        <div class="photo-capture-area" id="afterPhotoArea">
+          <button type="button" class="btn btn-secondary btn-photo" data-target="after_treatment_photo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Take Photo
+          </button>
+          <div class="single-photo-preview" id="after_treatment_photo_preview"></div>
+        </div>
+        <input type="file" class="photo-file-input" data-field="after_treatment_photo" accept="image/*" capture="environment" style="display:none">
+      </div>
+    </section>
+
+    <!-- Section 5: Issued By -->
+    <section class="form-section">
+      <h2 class="section-title">Issued By</h2>
+      <div class="field-group">
+        <label class="field-label required" for="issued_by_name">Name</label>
+        <input type="text" id="issued_by_name" name="issued_by_name" placeholder="Full name" required autocomplete="name">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Signature</label>
+        <div class="sig-container">
+          <canvas id="sigIssuer" class="sig-canvas" width="400" height="150"></canvas>
+          <button type="button" class="sig-clear-btn" data-target="sigIssuer">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6: Issued To -->
+    <section class="form-section">
+      <h2 class="section-title">Issued To</h2>
+      <div class="field-group">
+        <label class="field-label required" for="issued_to_name">Name</label>
+        <input type="text" id="issued_to_name" name="issued_to_name" placeholder="Full name" required autocomplete="name">
+      </div>
+    </section>
+
+    <!-- Section 7: Special Instructions -->
+    <section class="form-section">
+      <h2 class="section-title">Special Instructions</h2>
+      <div class="field-group">
+        <textarea id="special_instructions" name="special_instructions" rows="4" placeholder="Any conditions, instructions or requirements…"></textarea>
+      </div>
+    </section>
+
+    <!-- Section 8: Additional Photos -->
+    <section class="form-section">
+      <h2 class="section-title">Additional Photos</h2>
+      <div class="field-group">
+        <small class="field-hint">Instrument readings, site conditions, etc.</small>
+        <button type="button" id="addPhotoBtn" class="btn btn-secondary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Add Photo
+        </button>
+        <input type="file" id="extraPhotoInput" accept="image/*" capture="environment" multiple style="display:none">
+        <div id="extraPhotoGrid" class="photo-grid"></div>
+      </div>
+    </section>
+
+    <!-- Submit -->
+    <div class="submit-area">
+      <button type="submit" id="submitBtn" class="btn btn-primary btn-large">Submit Permit</button>
+      <p class="submit-hint">Generates a Word document and emails it to the permit recipient.</p>
+    </div>
+
+  </form>
+
+  <div id="draftBanner" class="draft-banner" hidden>
+    <span>Draft restored</span>
+    <button type="button" id="clearDraftBtn">Discard</button>
+  </div>
+
+  <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
+
+  <div id="loadingOverlay" class="loading-overlay" hidden>
+    <div class="loading-spinner"></div>
+    <p>Generating &amp; sending permit…</p>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

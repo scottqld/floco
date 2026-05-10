@@ -1,0 +1,17 @@
+# Environment & secrets
+.env
+worker/.dev.vars
+
+# Dependencies
+node_modules/
+worker/node_modules/
+
+# Generated logo module (built before deploy)
+worker/src/logo.js
+
+# Local data store
+data/clients.json
+
+# OS
+.DS_Store
+Thumbs.db

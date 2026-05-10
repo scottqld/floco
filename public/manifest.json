@@ -1,0 +1,18 @@
+{
+  "name": "Permit to Discharge",
+  "short_name": "Permit",
+  "description": "FRM013 Permit to Discharge – field data entry and submission",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#1a5276",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='24' fill='%231a5276'/><text x='50%25' y='55%25' font-family='Arial' font-size='100' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'>P</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

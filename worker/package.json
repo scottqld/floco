@@ -1,0 +1,16 @@
+{
+  "name": "floco-permits-worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build-logo": "node build-logo.js",
+    "dev": "node build-logo.js && wrangler dev",
+    "deploy": "node build-logo.js && wrangler deploy"
+  },
+  "dependencies": {
+    "docx": "^8.5.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
