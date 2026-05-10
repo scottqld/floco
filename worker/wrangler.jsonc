@@ -13,6 +13,6 @@
   // Create with: wrangler kv namespace create CLIENTS_KV
   // Then replace PLACEHOLDER below with the returned id
   "kv_namespaces": [
-    { "binding": "CLIENTS_KV", "id": "PLACEHOLDER_REPLACE_WITH_KV_ID" }
+    { "binding": "CLIENTS_KV", "id": "d05f1c5cf9f941339d22b5b2ee6d7e67" }
   ]
 }
