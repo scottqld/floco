@@ -456,7 +456,7 @@ form.addEventListener('submit', async e => {
     if (json.success) {
       clearDraft();
       showToast('Permit submitted and emailed!', 'success');
-      setTimeout(() => { if (confirm('Permit sent. Reset for a new permit?')) resetForm(); }, 1500);
+      setTimeout(() => { if (confirm('Permit sent. Reset for a new permit?')) { resetForm(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, 1500);
     } else {
       showToast('Error: ' + (json.message || 'Submission failed'), 'error');
     }
