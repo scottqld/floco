@@ -22,6 +22,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '50mb' }));
+
+// Override config.js so local dev uses this server (not the production Worker)
+app.get('/config.js', (_req, res) => {
+  res.type('js').send('const CONFIG = { API_URL: "" };');
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 const transporter = nodemailer.createTransport({
