@@ -527,6 +527,7 @@ form.addEventListener('submit', async e => {
     const q = getQueue();
     q.push(collectData());
     saveQueue(q);
+    advancePermitRef();
     saveOperatorName();
     clearDraft();
     showToast('No connection — permit saved and will send when back online.', '');
@@ -545,6 +546,7 @@ form.addEventListener('submit', async e => {
     const json = await res.json();
 
     if (json.success) {
+      advancePermitRef();
       saveOperatorName();
       clearDraft();
       showToast('Permit submitted and emailed!', 'success');
@@ -570,6 +572,7 @@ function collectData() {
   data.after_treatment_photo = singlePhotos.after_treatment_photo ?? null;
   data.additional_photos     = [...extraPhotos];
   data.cc_email              = document.getElementById('cc_email').value.trim();
+  data.permit_reference      = document.getElementById('permitRef').textContent;
   return data;
 }
 
@@ -587,6 +590,7 @@ function resetForm() {
   document.getElementById('draftBanner').hidden = true;
   clearDraft();
   setDefaults();
+  showPermitRef();
   prefillOperatorName();
 }
 
@@ -627,6 +631,19 @@ function setDefaults() {
   document.getElementById('valid_to_date').value =
     `${to.getFullYear()}-${pad(to.getMonth() + 1)}-${pad(to.getDate())}`;
   document.getElementById('valid_to_time').value = timeStr;
+}
+
+// ── Permit reference number ────────────────────────────────────────────────
+const PERMIT_REF_KEY = 'permit_ref_counter';
+
+function showPermitRef() {
+  const n = parseInt(localStorage.getItem(PERMIT_REF_KEY) || '0', 10) + 1;
+  document.getElementById('permitRef').textContent = `PTD-${String(n).padStart(4, '0')}`;
+}
+
+function advancePermitRef() {
+  const n = parseInt(localStorage.getItem(PERMIT_REF_KEY) || '0', 10) + 1;
+  localStorage.setItem(PERMIT_REF_KEY, String(n));
 }
 
 // ── Operator name pre-fill ─────────────────────────────────────────────────
@@ -682,6 +699,7 @@ async function processQueue() {
 window.addEventListener('online', processQueue);
 
 setDefaults();
+showPermitRef();
 loadDraft();    // restore any saved draft (overwrites defaults if draft exists)
 prefillOperatorName();
 initClients();  // load saved sites from server
@@ -749,13 +767,23 @@ function buildCascade(sites) {
     selectedClient = client;
     clientInput.value = client;
     clientList.hidden = true;
+    document.getElementById('clearPickerBtn').hidden = false;
     populateSites(client);
   }
+
+  const clearBtn = document.getElementById('clearPickerBtn');
+  clearBtn.onclick = () => {
+    clientInput.value = '';
+    clientInput.dispatchEvent(new Event('input'));
+    SITE_FIELDS.forEach(f => { const el = document.getElementById(f); if (el) el.value = ''; });
+    scheduleSave();
+  };
 
   clientInput.oninput = () => {
     selectedClient = null;
     populateSites(null);
     showClientDropdown(clientInput.value);
+    clearBtn.hidden = true;
   };
   clientInput.onfocus = () => { clientInput.select(); showClientDropdown(''); };
   clientInput.onblur  = () => {
@@ -922,6 +950,21 @@ function esc(s) {
     localStorage.setItem(A2HS_KEY, '1');
   });
 })();
+
+// ── Valid-to date presets ──────────────────────────────────────────────────
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const days = parseInt(btn.dataset.days, 10);
+    const fromVal = document.getElementById('valid_from_date').value;
+    const base = fromVal ? new Date(fromVal + 'T00:00:00') : new Date();
+    const to = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
+    const pad = n => String(n).padStart(2, '0');
+    document.getElementById('valid_to_date').value =
+      `${to.getFullYear()}-${pad(to.getMonth() + 1)}-${pad(to.getDate())}`;
+    scheduleSave();
+  });
+});
 
 // ── Save new site entry ────────────────────────────────────────────────────
 

@@ -86,6 +86,12 @@
 
   <form id="permitForm" novalidate>
 
+    <!-- Permit reference bar -->
+    <div class="permit-ref-bar">
+      <span class="permit-ref-label">Permit Reference</span>
+      <strong id="permitRef" class="permit-ref-value">PTD-0001</strong>
+    </div>
+
     <!-- Section 1: Site Details -->
     <section class="form-section">
       <h2 class="section-title">Site Details</h2>
@@ -96,6 +102,7 @@
         <div class="cascade-pickers">
           <div class="picker-combo">
             <input type="text" id="pickClient" class="picker-input" placeholder="— Search client —" autocomplete="off" autocorrect="off" spellcheck="false">
+            <button type="button" id="clearPickerBtn" class="picker-clear" title="Clear selection" hidden>×</button>
             <ul id="pickClientList" class="picker-dropdown" hidden></ul>
           </div>
           <select id="pickSite" class="picker-select" disabled>
@@ -175,6 +182,13 @@
           <label class="field-label" for="valid_to_time">Time</label>
           <input type="time" id="valid_to_time" name="valid_to_time">
         </div>
+      </div>
+      <div class="date-presets">
+        <span class="preset-label">Set to:</span>
+        <button type="button" class="preset-btn" data-days="0">Today</button>
+        <button type="button" class="preset-btn" data-days="1">+1 day</button>
+        <button type="button" class="preset-btn" data-days="3">+3 days</button>
+        <button type="button" class="preset-btn" data-days="7">+1 week</button>
       </div>
     </section>
 

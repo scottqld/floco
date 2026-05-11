@@ -34,6 +34,7 @@ function buildEmailBody(d) {
   return [
     'PERMIT TO DISCHARGE – FRM013',
     '==============================',
+    `Permit Reference: ${d.permit_reference || ''}`,
     `Client:           ${d.client || ''}`,
     `Site:             ${d.site || ''}`,
     `Site Address:     ${d.site_address || ''}`,
@@ -189,10 +190,11 @@ export default {
         const toList    = (env.EMAIL_TO || '').split(',').map(e => e.trim()).filter(Boolean);
         const ccList    = formData.cc_email ? [formData.cc_email] : [];
 
+        const ref = formData.permit_reference || '';
         const emailPayload = {
           from:        env.EMAIL_FROM,
           to:          toList,
-          subject:     `Permit to Discharge – ${issuedBy} – ${validFrom}`,
+          subject:     `${ref ? ref + ' · ' : ''}Permit to Discharge – ${issuedBy} – ${validFrom}`,
           text:        buildEmailBody(formData),
           attachments,
         };
