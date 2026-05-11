@@ -53,6 +53,7 @@ async function submitCode() {
   if (valid) {
     localStorage.setItem(CODE_KEY, code);
     hideGate();
+    initClients();
   } else {
     showGate('Incorrect access code — please try again.');
   }
