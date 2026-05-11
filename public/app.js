@@ -757,7 +757,7 @@ function buildCascade(sites) {
     populateSites(null);
     showClientDropdown(clientInput.value);
   };
-  clientInput.onfocus = () => showClientDropdown(clientInput.value);
+  clientInput.onfocus = () => { clientInput.select(); showClientDropdown(''); };
   clientInput.onblur  = () => {
     setTimeout(() => {
       clientList.hidden = true;
