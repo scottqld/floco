@@ -72,9 +72,14 @@
         <span class="header-main">Permit to Discharge</span>
         <span class="header-sub">FRM013 · Floco</span>
       </div>
-      <button type="button" id="logBtn" class="log-btn" title="Recent submissions">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      </button>
+      <div class="header-actions">
+        <button type="button" id="siteBtn" class="log-btn" title="Manage sites">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button type="button" id="logBtn" class="log-btn" title="Recent submissions">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -329,6 +334,22 @@
   <div id="draftBanner" class="draft-banner" hidden>
     <span>Draft restored</span>
     <button type="button" id="clearDraftBtn">Discard</button>
+  </div>
+
+  <!-- Site manager modal -->
+  <div id="siteModal" class="log-modal" hidden>
+    <div class="log-modal-inner">
+      <div class="log-modal-header">
+        <h2 class="log-modal-title">Manage Sites</h2>
+        <button type="button" id="siteModalClose" class="log-close">✕</button>
+      </div>
+      <div class="site-search-wrap">
+        <input type="search" id="siteSearch" class="site-search" placeholder="Search client, site, basin…">
+      </div>
+      <div id="siteList" class="site-list">
+        <p class="log-empty">Loading…</p>
+      </div>
+    </div>
   </div>
 
   <!-- Log modal -->

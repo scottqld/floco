@@ -5,7 +5,7 @@ import { generatePDF } from './generatePDF.js';
 function corsHeaders(env) {
   return {
     'Access-Control-Allow-Origin':  env.ALLOWED_ORIGIN || '*',
-    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Access-Code',
   };
 }
@@ -147,13 +147,25 @@ export default {
       return json({ success: true, entry }, 200, env);
     }
 
-    // ── DELETE /api/clients/:id ───────────────────────────────────────────────
-    const deleteMatch = url.pathname.match(/^\/api\/clients\/([^/]+)$/);
-    if (method === 'DELETE' && deleteMatch) {
-      const id   = deleteMatch[1];
+    // ── DELETE & PUT /api/clients/:id ────────────────────────────────────────
+    const clientIdMatch = url.pathname.match(/^\/api\/clients\/([^/]+)$/);
+
+    if (method === 'DELETE' && clientIdMatch) {
+      const id   = clientIdMatch[1];
       const list = await readClients(env);
       await writeClients(env, list.filter(c => c.id !== id));
       return json({ success: true }, 200, env);
+    }
+
+    if (method === 'PUT' && clientIdMatch) {
+      const id   = clientIdMatch[1];
+      const body = await request.json();
+      const list = await readClients(env);
+      const idx  = list.findIndex(c => c.id === id);
+      if (idx === -1) return json({ error: 'Not found' }, 404, env);
+      list[idx] = { ...list[idx], ...body, id };
+      await writeClients(env, list);
+      return json({ success: true, entry: list[idx] }, 200, env);
     }
 
     // ── POST /api/submit ──────────────────────────────────────────────────────

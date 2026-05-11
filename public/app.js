@@ -908,6 +908,10 @@ function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+function escAttr(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ADD TO HOME SCREEN
 // ═══════════════════════════════════════════════════════════════════════════
@@ -950,6 +954,131 @@ function esc(s) {
     localStorage.setItem(A2HS_KEY, '1');
   });
 })();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SITE MANAGER
+// ═══════════════════════════════════════════════════════════════════════════
+
+document.getElementById('siteBtn').addEventListener('click', openSiteManager);
+document.getElementById('siteModalClose').addEventListener('click', () => { document.getElementById('siteModal').hidden = true; });
+document.getElementById('siteModal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.hidden = true; });
+document.getElementById('siteSearch').addEventListener('input', () => renderSiteList(allSites));
+
+function openSiteManager() {
+  document.getElementById('siteModal').hidden = false;
+  document.getElementById('siteSearch').value = '';
+  renderSiteList(allSites);
+}
+
+function renderSiteList(sites) {
+  const list = document.getElementById('siteList');
+  const q    = (document.getElementById('siteSearch').value || '').toLowerCase();
+
+  const filtered = q
+    ? sites.filter(s => [s.client, s.site, s.basin, s.site_address, s.basin_reference]
+        .some(v => v && v.toLowerCase().includes(q)))
+    : sites;
+
+  if (!filtered.length) {
+    list.innerHTML = `<p class="log-empty">${sites.length ? 'No matches.' : 'No sites saved yet.'}</p>`;
+    return;
+  }
+
+  const grouped = {};
+  filtered.forEach(s => { (grouped[s.client] = grouped[s.client] || []).push(s); });
+
+  list.innerHTML = Object.keys(grouped).sort().map(client => `
+    <div class="site-group">
+      <div class="site-group-header">${esc(client)}</div>
+      ${grouped[client].map(e => `
+        <div class="site-entry" data-id="${e.id}">
+          <div class="site-entry-info">
+            <span class="site-entry-name">${esc(e.site)}</span>
+            ${e.basin ? `<span class="site-entry-meta">${esc(e.basin)}${e.basin_reference ? ' · ' + esc(e.basin_reference) : ''}</span>` : ''}
+            ${e.site_address ? `<span class="site-entry-addr">${esc(e.site_address)}</span>` : ''}
+          </div>
+          <div class="site-entry-actions">
+            <button type="button" class="site-icon-btn site-edit-btn" data-id="${e.id}" title="Edit">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button type="button" class="site-icon-btn site-delete-btn" data-id="${e.id}" title="Delete">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="site-edit-form" id="ef-${e.id}" hidden>
+          <div class="site-field"><label class="site-field-label">Client</label><input class="site-field-input ef-client" value="${escAttr(e.client)}"></div>
+          <div class="site-field"><label class="site-field-label">Site</label><input class="site-field-input ef-site" value="${escAttr(e.site)}"></div>
+          <div class="site-field"><label class="site-field-label">Address</label><input class="site-field-input ef-addr" value="${escAttr(e.site_address)}"></div>
+          <div class="site-field"><label class="site-field-label">Basin</label><input class="site-field-input ef-basin" value="${escAttr(e.basin)}"></div>
+          <div class="site-field"><label class="site-field-label">Basin Ref</label><input class="site-field-input ef-ref" value="${escAttr(e.basin_reference)}"></div>
+          <div class="site-edit-btns">
+            <button type="button" class="btn btn-primary btn-sm site-save-btn" data-id="${e.id}">Save</button>
+            <button type="button" class="btn btn-secondary btn-sm site-cancel-btn" data-id="${e.id}">Cancel</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.site-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      list.querySelectorAll('.site-edit-form').forEach(f => { f.hidden = f.id !== 'ef-' + id; });
+      document.getElementById('ef-' + id).querySelector('.ef-client').focus();
+    });
+  });
+
+  list.querySelectorAll('.site-cancel-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('ef-' + btn.dataset.id).hidden = true;
+    });
+  });
+
+  list.querySelectorAll('.site-save-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id   = btn.dataset.id;
+      const form = document.getElementById('ef-' + id);
+      const body = {
+        client:          form.querySelector('.ef-client').value.trim(),
+        site:            form.querySelector('.ef-site').value.trim(),
+        site_address:    form.querySelector('.ef-addr').value.trim(),
+        basin:           form.querySelector('.ef-basin').value.trim(),
+        basin_reference: form.querySelector('.ef-ref').value.trim(),
+      };
+      if (!body.client || !body.site) { showToast('Client and Site are required.', 'error'); return; }
+      btn.disabled = true;
+      try {
+        await apiFetch('/api/clients/' + id, { method: 'PUT', body: JSON.stringify(body) });
+        allSites = await apiFetch('/api/clients').then(r => r.json());
+        buildCascade(allSites);
+        renderSiteList(allSites);
+        showToast('Saved.', 'success');
+      } catch {
+        showToast('Could not save — check connection.', 'error');
+        btn.disabled = false;
+      }
+    });
+  });
+
+  list.querySelectorAll('.site-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id    = btn.dataset.id;
+      const entry = allSites.find(s => s.id === id);
+      const label = [entry?.site, entry?.basin].filter(Boolean).join(' – ') || 'this entry';
+      if (!confirm(`Delete "${label}"?`)) return;
+      try {
+        await apiFetch('/api/clients/' + id, { method: 'DELETE' });
+        allSites = await apiFetch('/api/clients').then(r => r.json());
+        buildCascade(allSites);
+        renderSiteList(allSites);
+        showToast('Deleted.', '');
+      } catch {
+        showToast('Could not delete — check connection.', 'error');
+      }
+    });
+  });
+}
 
 // ── Valid-to date presets ──────────────────────────────────────────────────
 
