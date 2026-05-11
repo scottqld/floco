@@ -60,6 +60,15 @@ app.post('/api/clients', (req, res) => {
   res.json({ success: true, entry });
 });
 
+app.put('/api/clients/:id', (req, res) => {
+  const list = readClients();
+  const idx  = list.findIndex(c => c.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  list[idx] = { ...list[idx], ...req.body, id: req.params.id };
+  writeClients(list);
+  res.json({ success: true, entry: list[idx] });
+});
+
 app.delete('/api/clients/:id', (req, res) => {
   writeClients(readClients().filter(c => c.id !== req.params.id));
   res.json({ success: true });
