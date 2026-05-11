@@ -568,6 +568,7 @@ function collectData() {
   data.initial_test_photo    = singlePhotos.initial_test_photo    ?? null;
   data.after_treatment_photo = singlePhotos.after_treatment_photo ?? null;
   data.additional_photos     = [...extraPhotos];
+  data.cc_email              = document.getElementById('cc_email').value.trim();
   return data;
 }
 
@@ -755,6 +756,88 @@ async function deleteSite(id) {
     showToast('Could not remove site – check connection.', 'error');
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LOG VIEWER
+// ═══════════════════════════════════════════════════════════════════════════
+
+document.getElementById('logBtn').addEventListener('click', openLog);
+document.getElementById('logClose').addEventListener('click', () => { document.getElementById('logModal').hidden = true; });
+document.getElementById('logModal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.hidden = true; });
+
+async function openLog() {
+  const modal = document.getElementById('logModal');
+  const list  = document.getElementById('logList');
+  modal.hidden = false;
+  list.innerHTML = '<p class="log-empty">Loading…</p>';
+  try {
+    const entries = await apiFetch('/api/log').then(r => r.json());
+    if (!entries.length) { list.innerHTML = '<p class="log-empty">No submissions yet.</p>'; return; }
+    list.innerHTML = entries.map(e => {
+      const date = e.timestamp ? new Date(e.timestamp).toLocaleString() : e.validFrom || '';
+      return `<div class="log-entry">
+        <div class="log-entry-top">
+          <span class="log-entry-client">${esc(e.client)} – ${esc(e.site)}</span>
+          <span class="log-entry-date">${date}</span>
+        </div>
+        <div class="log-entry-detail">Issued by ${esc(e.issuedBy)} → ${esc(e.issuedTo)} · ${esc(e.dischargeTo)}</div>
+      </div>`;
+    }).join('');
+  } catch {
+    list.innerHTML = '<p class="log-empty">Could not load — check connection.</p>';
+  }
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ADD TO HOME SCREEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+(function initA2HS() {
+  const banner   = document.getElementById('a2hsBanner');
+  const dismiss  = document.getElementById('a2hsDismiss');
+  const A2HS_KEY = 'a2hs_dismissed';
+
+  if (localStorage.getItem(A2HS_KEY)) return;
+  if (window.navigator.standalone) return; // already installed on iOS
+
+  // Android / Chrome: native install prompt
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('a2hsText').textContent = 'Install this app for quick offline access.';
+    banner.hidden = false;
+    banner.querySelector('button:not(#a2hsDismiss)') && null; // no extra button needed
+    // Replace banner tap with native prompt
+    banner.addEventListener('click', async ev => {
+      if (ev.target === dismiss) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') localStorage.setItem(A2HS_KEY, '1');
+      banner.hidden = true;
+    });
+  });
+
+  // iOS Safari: manual instruction
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSafari = /safari/i.test(navigator.userAgent) && !/chrome/i.test(navigator.userAgent);
+  if (isIOS && isSafari && !deferredPrompt) {
+    banner.hidden = false;
+  }
+
+  dismiss.addEventListener('click', () => {
+    banner.hidden = true;
+    localStorage.setItem(A2HS_KEY, '1');
+  });
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SAVED SITES (CLIENT MANAGEMENT)
+// ═══════════════════════════════════════════════════════════════════════════
 
 document.getElementById('saveSiteBtn').addEventListener('click', async () => {
   const client = document.getElementById('client').value.trim();

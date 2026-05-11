@@ -187,6 +187,16 @@ export default {
         const issuedBy  = formData.issued_by_name  || 'Unknown';
         const validFrom = formData.valid_from_date  || '';
         const toList    = (env.EMAIL_TO || '').split(',').map(e => e.trim()).filter(Boolean);
+        const ccList    = formData.cc_email ? [formData.cc_email] : [];
+
+        const emailPayload = {
+          from:        env.EMAIL_FROM,
+          to:          toList,
+          subject:     `Permit to Discharge – ${issuedBy} – ${validFrom}`,
+          text:        buildEmailBody(formData),
+          attachments,
+        };
+        if (ccList.length) emailPayload.cc = ccList;
 
         const resendRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -194,13 +204,7 @@ export default {
             'Authorization': `Bearer ${env.RESEND_API_KEY}`,
             'Content-Type':  'application/json',
           },
-          body: JSON.stringify({
-            from:        env.EMAIL_FROM,
-            to:          toList,
-            subject:     `Permit to Discharge – ${issuedBy} – ${validFrom}`,
-            text:        buildEmailBody(formData),
-            attachments,
-          }),
+          body: JSON.stringify(emailPayload),
         });
 
         if (!resendRes.ok) {
