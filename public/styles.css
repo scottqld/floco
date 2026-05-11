@@ -26,6 +26,65 @@ body {
   padding-bottom: 32px;
 }
 
+/* ── Access gate ── */
+.access-gate {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 24px;
+}
+.access-gate[hidden] { display: none; }
+
+.access-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 36px 28px 28px;
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,.28);
+}
+.access-brand {
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin-bottom: 8px;
+}
+.access-heading {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+.access-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 1.1rem;
+  text-align: center;
+  letter-spacing: .2em;
+  margin-bottom: 10px;
+  -webkit-appearance: none;
+}
+.access-input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(41,171,226,.18);
+}
+.access-error {
+  color: var(--danger);
+  font-size: .83rem;
+  margin-bottom: 10px;
+}
+.access-btn { margin-top: 6px; }
+
 /* ── Header ── */
 .app-header {
   background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);

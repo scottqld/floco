@@ -8,6 +8,75 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }
 
+// ── Access gate ────────────────────────────────────────────────────────────
+const CODE_KEY = 'permit_code';
+
+function getStoredCode() {
+  return localStorage.getItem(CODE_KEY) || '';
+}
+
+function showGate(errorMsg) {
+  const gate = document.getElementById('accessGate');
+  gate.removeAttribute('hidden');
+  const err = document.getElementById('accessError');
+  if (errorMsg) { err.textContent = errorMsg; err.hidden = false; }
+  else           { err.hidden = true; }
+  document.getElementById('accessCodeInput').value = '';
+  document.getElementById('accessCodeInput').focus();
+}
+
+function hideGate() {
+  document.getElementById('accessGate').hidden = true;
+}
+
+async function validateCode(code) {
+  try {
+    const res = await fetch(`${API}/api/auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Access-Code': code },
+      body: '{}',
+    });
+    return res.status === 200;
+  } catch { return false; }
+}
+
+document.getElementById('accessSubmitBtn').addEventListener('click', submitCode);
+document.getElementById('accessCodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitCode(); });
+
+async function submitCode() {
+  const code = document.getElementById('accessCodeInput').value.trim();
+  if (!code) return;
+  const btn = document.getElementById('accessSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+  const valid = await validateCode(code);
+  if (valid) {
+    localStorage.setItem(CODE_KEY, code);
+    hideGate();
+  } else {
+    showGate('Incorrect access code — please try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Continue';
+}
+
+(async function initGate() {
+  if (!API) { hideGate(); return; } // local dev — no auth
+  const stored = getStoredCode();
+  if (stored && await validateCode(stored)) { hideGate(); return; }
+  localStorage.removeItem(CODE_KEY);
+  showGate();
+})();
+
+// ── Authenticated fetch wrapper ────────────────────────────────────────────
+function apiFetch(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...options.headers, 'X-Access-Code': getStoredCode() };
+  return fetch(`${API}${path}`, { ...options, headers }).then(res => {
+    if (res.status === 401) { localStorage.removeItem(CODE_KEY); showGate('Session expired — please re-enter your access code.'); }
+    return res;
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 1. EXIF ROTATION FIX
 // ═══════════════════════════════════════════════════════════════════════════
@@ -468,9 +537,8 @@ form.addEventListener('submit', async e => {
   loadingOverlay.hidden = false;
 
   try {
-    const res  = await fetch(`${API}/api/submit`, {
+    const res  = await apiFetch('/api/submit', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(collectData()),
     });
     const json = await res.json();
@@ -593,9 +661,8 @@ async function processQueue() {
   const remaining = [];
   for (const item of queue) {
     try {
-      const res  = await fetch(`${API}/api/submit`, {
+      const res  = await apiFetch('/api/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(item),
       });
       const json = await res.json();
@@ -625,7 +692,7 @@ const SITE_FIELDS = ['client','site','site_address','basin','basin_reference'];
 
 async function initClients() {
   try {
-    const sites = await fetch(`${API}/api/clients`).then(r => r.json());
+    const sites = await apiFetch('/api/clients').then(r => r.json());
     renderSiteChips(sites);
   } catch { /* offline – skip */ }
 }
@@ -681,8 +748,8 @@ function applySite(site) {
 async function deleteSite(id) {
   if (!confirm('Remove this saved site?')) return;
   try {
-    await fetch(`${API}/api/clients/${id}`, { method: 'DELETE' });
-    const sites = await fetch(`${API}/api/clients`).then(r => r.json());
+    await apiFetch(`/api/clients/${id}`, { method: 'DELETE' });
+    const sites = await apiFetch('/api/clients').then(r => r.json());
     renderSiteChips(sites);
   } catch {
     showToast('Could not remove site – check connection.', 'error');
@@ -700,9 +767,8 @@ document.getElementById('saveSiteBtn').addEventListener('click', async () => {
   SITE_FIELDS.forEach(f => { body[f] = document.getElementById(f)?.value.trim() || ''; });
 
   try {
-    const res = await fetch(`${API}/api/clients`, {
+    const res = await apiFetch('/api/clients', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     const json = await res.json();
@@ -710,7 +776,7 @@ document.getElementById('saveSiteBtn').addEventListener('click', async () => {
       showToast('This site is already saved.', '');
     } else {
       showToast(`Saved: ${client} – ${site}`, 'success');
-      const sites = await fetch(`${API}/api/clients`).then(r => r.json());
+      const sites = await apiFetch('/api/clients').then(r => r.json());
       renderSiteChips(sites);
     }
   } catch {

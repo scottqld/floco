@@ -6,7 +6,7 @@ function corsHeaders(env) {
   return {
     'Access-Control-Allow-Origin':  env.ALLOWED_ORIGIN || '*',
     'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Access-Code',
   };
 }
 
@@ -91,6 +91,23 @@ export default {
     // CORS preflight
     if (method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(env) });
+    }
+
+    // ── POST /api/auth ────────────────────────────────────────────────────────
+    if (method === 'POST' && url.pathname === '/api/auth') {
+      const code = request.headers.get('X-Access-Code') || '';
+      if (env.ACCESS_CODE && code !== env.ACCESS_CODE) {
+        return json({ error: 'Unauthorized' }, 401, env);
+      }
+      return json({ ok: true }, 200, env);
+    }
+
+    // ── Auth gate (all other routes) ──────────────────────────────────────────
+    if (env.ACCESS_CODE) {
+      const code = request.headers.get('X-Access-Code') || '';
+      if (code !== env.ACCESS_CODE) {
+        return json({ error: 'Unauthorized' }, 401, env);
+      }
     }
 
     // ── GET /api/log ──────────────────────────────────────────────────────────

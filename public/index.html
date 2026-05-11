@@ -12,6 +12,17 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Access gate – shown until a valid access code is entered -->
+  <div id="accessGate" class="access-gate">
+    <div class="access-card">
+      <p class="access-brand">Floco · Permit to Discharge</p>
+      <h2 class="access-heading">Enter access code</h2>
+      <input type="password" id="accessCodeInput" class="access-input" placeholder="Access code" autocomplete="off">
+      <div id="accessError" class="access-error" hidden></div>
+      <button id="accessSubmitBtn" class="btn btn-primary btn-large access-btn" type="button">Continue</button>
+    </div>
+  </div>
+
   <header class="app-header">
     <div class="header-inner">
       <svg class="header-logo" viewBox="0 0 112 84" aria-label="Floco">
