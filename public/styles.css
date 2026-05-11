@@ -42,17 +42,37 @@ body {
   width: auto;
   filter: brightness(0) invert(1);
   flex-shrink: 0;
-  animation: droplet-fall 2.6s ease-in-out infinite;
-  transform-origin: center bottom;
+  animation: droplet-fall 3.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  transform-origin: center center;
 }
 
 @keyframes droplet-fall {
-  0%        { transform: translateY(-7px) scaleX(1)    scaleY(1);    animation-timing-function: ease-in; }
-  45%       { transform: translateY(0px)  scaleX(1.12) scaleY(0.88); animation-timing-function: ease-out; }
-  62%       { transform: translateY(-4px) scaleX(0.95) scaleY(1.05); }
-  76%       { transform: translateY(0px)  scaleX(1.05) scaleY(0.96); }
-  88%       { transform: translateY(-2px) scaleX(1)    scaleY(1); }
-  95%, 100% { transform: translateY(-7px) scaleX(1)    scaleY(1); }
+  /* Droplet hanging at top — elongated by surface tension */
+  0%, 22% {
+    transform: translateY(-18px) scaleX(0.88) scaleY(1.12);
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  /* Impact — ripples explode outward, water flattens */
+  50% {
+    transform: translateY(0px) scaleX(1.22) scaleY(0.78);
+    animation-timing-function: cubic-bezier(0, 0.6, 0.4, 1);
+  }
+  /* Water column bounces up */
+  63% {
+    transform: translateY(-8px) scaleX(0.92) scaleY(1.08);
+  }
+  /* Secondary splash settles */
+  75% {
+    transform: translateY(0px) scaleX(1.07) scaleY(0.95);
+  }
+  /* Ripples die down */
+  87% {
+    transform: translateY(-3px) scaleX(0.98) scaleY(1.02);
+  }
+  /* Rest before next drop */
+  94%, 100% {
+    transform: translateY(-18px) scaleX(0.88) scaleY(1.12);
+  }
 }
 .header-title { display: flex; flex-direction: column; gap: 1px; }
 .header-sub  { font-size: .68rem; letter-spacing: .12em; opacity: .80; text-transform: uppercase; }
