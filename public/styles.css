@@ -37,7 +37,23 @@ body {
   box-shadow: 0 2px 10px rgba(11,106,158,.35);
 }
 .header-inner { display: flex; align-items: center; gap: 12px; }
-.header-logo  { height: 42px; width: auto; filter: brightness(0) invert(1); flex-shrink: 0; }
+.header-logo  {
+  height: 42px;
+  width: auto;
+  filter: brightness(0) invert(1);
+  flex-shrink: 0;
+  animation: droplet-fall 2.6s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+@keyframes droplet-fall {
+  0%        { transform: translateY(-7px) scaleX(1)    scaleY(1);    animation-timing-function: ease-in; }
+  45%       { transform: translateY(0px)  scaleX(1.12) scaleY(0.88); animation-timing-function: ease-out; }
+  62%       { transform: translateY(-4px) scaleX(0.95) scaleY(1.05); }
+  76%       { transform: translateY(0px)  scaleX(1.05) scaleY(0.96); }
+  88%       { transform: translateY(-2px) scaleX(1)    scaleY(1); }
+  95%, 100% { transform: translateY(-7px) scaleX(1)    scaleY(1); }
+}
 .header-title { display: flex; flex-direction: column; gap: 1px; }
 .header-sub  { font-size: .68rem; letter-spacing: .12em; opacity: .80; text-transform: uppercase; }
 .header-main { font-size: 1.15rem; font-weight: 700; }
