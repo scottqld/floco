@@ -701,6 +701,8 @@ async function initClients() {
 }
 
 function buildCascade(sites) {
+  if (!Array.isArray(sites)) return;
+
   const clientSel = document.getElementById('pickClient');
   const siteSel   = document.getElementById('pickSite');
   const basinSel  = document.getElementById('pickBasin');
@@ -718,24 +720,16 @@ function buildCascade(sites) {
   clientSel.disabled = clients.length === 0;
   siteSel.disabled   = true;
   basinSel.disabled  = true;
+  siteSel.innerHTML  = '<option value="">— Select site —</option>';
+  basinSel.innerHTML = '<option value="">— Select basin —</option>';
 
-  // Remove any old listeners by cloning
-  const newClientSel = clientSel.cloneNode(true);
-  const newSiteSel   = siteSel.cloneNode(false);
-  newSiteSel.innerHTML = '<option value="">— Select site —</option>';
-  const newBasinSel  = basinSel.cloneNode(false);
-  newBasinSel.innerHTML = '<option value="">— Select basin —</option>';
-  clientSel.replaceWith(newClientSel);
-  siteSel.replaceWith(newSiteSel);
-  basinSel.replaceWith(newBasinSel);
+  clientSel.onchange = () => {
+    const client = clientSel.value;
+    siteSel.innerHTML  = '<option value="">— Select site —</option>';
+    basinSel.innerHTML = '<option value="">— Select basin —</option>';
+    basinSel.disabled  = true;
 
-  newClientSel.addEventListener('change', () => {
-    const client = newClientSel.value;
-    newSiteSel.innerHTML   = '<option value="">— Select site —</option>';
-    newBasinSel.innerHTML  = '<option value="">— Select basin —</option>';
-    newBasinSel.disabled   = true;
-
-    if (!client) { newSiteSel.disabled = true; return; }
+    if (!client) { siteSel.disabled = true; return; }
 
     const siteNames = [...new Set(
       sites.filter(s => s.client === client).map(s => s.site)
@@ -745,23 +739,23 @@ function buildCascade(sites) {
       const opt = document.createElement('option');
       opt.value = name;
       opt.textContent = name;
-      newSiteSel.appendChild(opt);
+      siteSel.appendChild(opt);
     });
-    newSiteSel.disabled = false;
-  });
+    siteSel.disabled = false;
+  };
 
-  newSiteSel.addEventListener('change', () => {
-    const client = newClientSel.value;
-    const site   = newSiteSel.value;
-    newBasinSel.innerHTML = '<option value="">— Select basin —</option>';
+  siteSel.onchange = () => {
+    const client = clientSel.value;
+    const site   = siteSel.value;
+    basinSel.innerHTML = '<option value="">— Select basin —</option>';
 
-    if (!site) { newBasinSel.disabled = true; return; }
+    if (!site) { basinSel.disabled = true; return; }
 
     const matches = sites.filter(s => s.client === client && s.site === site);
 
     if (matches.length === 1) {
       applySite(matches[0]);
-      newBasinSel.disabled = true;
+      basinSel.disabled = true;
       return;
     }
 
@@ -769,17 +763,17 @@ function buildCascade(sites) {
       const opt = document.createElement('option');
       opt.value = b.id;
       opt.textContent = b.basin || '(unnamed basin)';
-      newBasinSel.appendChild(opt);
+      basinSel.appendChild(opt);
     });
-    newBasinSel.disabled = false;
-  });
+    basinSel.disabled = false;
+  };
 
-  newBasinSel.addEventListener('change', () => {
-    const id = newBasinSel.value;
+  basinSel.onchange = () => {
+    const id = basinSel.value;
     if (!id) return;
     const record = sites.find(s => s.id === id);
     if (record) applySite(record);
-  });
+  };
 }
 
 function applySite(site) {
