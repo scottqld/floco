@@ -686,54 +686,99 @@ prefillOperatorName();
 initClients();  // load saved sites from server
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SAVED SITES (CLIENT MANAGEMENT)
+// SAVED SITES – CASCADING PICKERS (Client → Site → Basin)
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SITE_FIELDS = ['client','site','site_address','basin','basin_reference'];
 
+let allSites = [];
+
 async function initClients() {
   try {
-    const sites = await apiFetch('/api/clients').then(r => r.json());
-    renderSiteChips(sites);
+    allSites = await apiFetch('/api/clients').then(r => r.json());
+    buildCascade(allSites);
   } catch { /* offline – skip */ }
 }
 
-function renderSiteChips(sites) {
-  const container = document.getElementById('siteChips');
-  const noMsg     = document.getElementById('noSitesMsg');
+function buildCascade(sites) {
+  const clientSel = document.getElementById('pickClient');
+  const siteSel   = document.getElementById('pickSite');
+  const basinSel  = document.getElementById('pickBasin');
 
-  // Remove existing chips (keep the no-sites message node)
-  container.querySelectorAll('.site-chip').forEach(el => el.remove());
+  const clients = [...new Set(sites.map(s => s.client))].sort();
 
-  if (!sites || sites.length === 0) {
-    noMsg.hidden = false;
-    return;
-  }
-  noMsg.hidden = true;
+  clientSel.innerHTML = '<option value="">— Select client —</option>';
+  clients.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    clientSel.appendChild(opt);
+  });
 
-  sites.forEach(site => {
-    const chip = document.createElement('div');
-    chip.className = 'site-chip';
+  clientSel.disabled = clients.length === 0;
+  siteSel.disabled   = true;
+  basinSel.disabled  = true;
 
-    const selectBtn = document.createElement('button');
-    selectBtn.type = 'button';
-    selectBtn.className = 'site-chip-label';
-    selectBtn.textContent = site.site
-      ? `${site.client} – ${site.site}`
-      : site.client;
-    selectBtn.title = [site.site_address, site.basin].filter(Boolean).join(' | ');
-    selectBtn.addEventListener('click', () => applySite(site));
+  // Remove any old listeners by cloning
+  const newClientSel = clientSel.cloneNode(true);
+  const newSiteSel   = siteSel.cloneNode(false);
+  newSiteSel.innerHTML = '<option value="">— Select site —</option>';
+  const newBasinSel  = basinSel.cloneNode(false);
+  newBasinSel.innerHTML = '<option value="">— Select basin —</option>';
+  clientSel.replaceWith(newClientSel);
+  siteSel.replaceWith(newSiteSel);
+  basinSel.replaceWith(newBasinSel);
 
-    const delBtn = document.createElement('button');
-    delBtn.type = 'button';
-    delBtn.className = 'site-chip-delete';
-    delBtn.textContent = '×';
-    delBtn.title = 'Remove saved site';
-    delBtn.addEventListener('click', () => deleteSite(site.id));
+  newClientSel.addEventListener('change', () => {
+    const client = newClientSel.value;
+    newSiteSel.innerHTML   = '<option value="">— Select site —</option>';
+    newBasinSel.innerHTML  = '<option value="">— Select basin —</option>';
+    newBasinSel.disabled   = true;
 
-    chip.appendChild(selectBtn);
-    chip.appendChild(delBtn);
-    container.appendChild(chip);
+    if (!client) { newSiteSel.disabled = true; return; }
+
+    const siteNames = [...new Set(
+      sites.filter(s => s.client === client).map(s => s.site)
+    )].sort();
+
+    siteNames.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      newSiteSel.appendChild(opt);
+    });
+    newSiteSel.disabled = false;
+  });
+
+  newSiteSel.addEventListener('change', () => {
+    const client = newClientSel.value;
+    const site   = newSiteSel.value;
+    newBasinSel.innerHTML = '<option value="">— Select basin —</option>';
+
+    if (!site) { newBasinSel.disabled = true; return; }
+
+    const matches = sites.filter(s => s.client === client && s.site === site);
+
+    if (matches.length === 1) {
+      applySite(matches[0]);
+      newBasinSel.disabled = true;
+      return;
+    }
+
+    matches.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id;
+      opt.textContent = b.basin || '(unnamed basin)';
+      newBasinSel.appendChild(opt);
+    });
+    newBasinSel.disabled = false;
+  });
+
+  newBasinSel.addEventListener('change', () => {
+    const id = newBasinSel.value;
+    if (!id) return;
+    const record = sites.find(s => s.id === id);
+    if (record) applySite(record);
   });
 }
 
@@ -744,17 +789,6 @@ function applySite(site) {
   });
   showToast(`Loaded: ${site.client} – ${site.site}`, 'success');
   scheduleSave();
-}
-
-async function deleteSite(id) {
-  if (!confirm('Remove this saved site?')) return;
-  try {
-    await apiFetch(`/api/clients/${id}`, { method: 'DELETE' });
-    const sites = await apiFetch('/api/clients').then(r => r.json());
-    renderSiteChips(sites);
-  } catch {
-    showToast('Could not remove site – check connection.', 'error');
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -835,9 +869,7 @@ function esc(s) {
   });
 })();
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SAVED SITES (CLIENT MANAGEMENT)
-// ═══════════════════════════════════════════════════════════════════════════
+// ── Save new site entry ────────────────────────────────────────────────────
 
 document.getElementById('saveSiteBtn').addEventListener('click', async () => {
   const client = document.getElementById('client').value.trim();
@@ -859,8 +891,8 @@ document.getElementById('saveSiteBtn').addEventListener('click', async () => {
       showToast('This site is already saved.', '');
     } else {
       showToast(`Saved: ${client} – ${site}`, 'success');
-      const sites = await apiFetch('/api/clients').then(r => r.json());
-      renderSiteChips(sites);
+      allSites = await apiFetch('/api/clients').then(r => r.json());
+      buildCascade(allSites);
     }
   } catch {
     showToast('Could not save – check connection.', 'error');

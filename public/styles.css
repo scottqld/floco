@@ -296,7 +296,7 @@ textarea { resize: vertical; min-height: 72px; }
   pointer-events: none;
 }
 
-/* ── Saved sites ── */
+/* ── Saved sites – cascading pickers ── */
 .saved-sites-block {
   margin-bottom: 16px;
   padding-bottom: 14px;
@@ -304,55 +304,36 @@ textarea { resize: vertical; min-height: 72px; }
 }
 .saved-sites-block .field-label { margin-bottom: 8px; }
 
-.site-chips {
+.cascade-pickers {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
-  align-items: center;
 }
 
-.no-sites-msg {
-  font-size: .8rem;
-  color: var(--muted);
-  font-style: italic;
-}
-
-.site-chip {
-  display: flex;
-  align-items: stretch;
-  border: 1.5px solid var(--brand);
-  border-radius: 20px;
-  overflow: hidden;
-  max-width: 100%;
-}
-
-.site-chip-label {
-  background: #eaf3fb;
-  color: var(--brand);
-  border: none;
-  padding: 6px 12px;
-  font-size: .82rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 220px;
-}
-.site-chip-label:hover { background: #d4e9f7; }
-
-.site-chip-delete {
-  background: #eaf3fb;
-  color: var(--muted);
-  border: none;
-  border-left: 1px solid var(--brand);
-  padding: 6px 9px;
+.picker-select {
+  width: 100%;
+  padding: 10px 32px 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
   font-size: .95rem;
+  font-family: inherit;
+  color: var(--text);
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235A87A0' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center;
+  -webkit-appearance: none;
+  appearance: none;
   cursor: pointer;
-  line-height: 1;
-  flex-shrink: 0;
+  transition: border-color .15s;
 }
-.site-chip-delete:hover { background: #fadbd8; color: var(--danger); }
+.picker-select:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(41,171,226,.18);
+}
+.picker-select:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  background-color: #f0f6fa;
+}
 
 .save-site-row {
   margin-top: 12px;
