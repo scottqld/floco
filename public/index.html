@@ -14,7 +14,50 @@
 <body>
   <header class="app-header">
     <div class="header-inner">
-      <img src="floco_logo.png" alt="Floco" class="header-logo">
+      <svg class="header-logo" viewBox="0 0 112 84" aria-label="Floco">
+
+        <!-- Ring 1 – innermost, first to appear -->
+        <ellipse cx="56" cy="62" rx="0" ry="0" stroke="white" stroke-width="3" fill="none">
+          <animate attributeName="rx" values="0;0;0;14;14;0" keyTimes="0;0.43;0.45;0.74;0.95;1" dur="3.4s" repeatCount="indefinite" calcMode="spline" keySplines="0 0 1 1;0 0 1 1;0 0.5 0.3 1;0 0 1 1;0 0 1 1"/>
+          <animate attributeName="ry" values="0;0;0;5;5;0"   keyTimes="0;0.43;0.45;0.74;0.95;1" dur="3.4s" repeatCount="indefinite" calcMode="spline" keySplines="0 0 1 1;0 0 1 1;0 0.5 0.3 1;0 0 1 1;0 0 1 1"/>
+          <animate attributeName="opacity" values="0;0;1;0;0;0" keyTimes="0;0.43;0.46;0.74;0.95;1" dur="3.4s" repeatCount="indefinite"/>
+        </ellipse>
+
+        <!-- Ring 2 -->
+        <ellipse cx="56" cy="62" rx="0" ry="0" stroke="white" stroke-width="2.5" fill="none">
+          <animate attributeName="rx" values="0;0;0;27;27;0" keyTimes="0;0.46;0.48;0.77;0.95;1" dur="3.4s" repeatCount="indefinite" calcMode="spline" keySplines="0 0 1 1;0 0 1 1;0 0.5 0.3 1;0 0 1 1;0 0 1 1"/>
+          <animate attributeName="ry" values="0;0;0;8.5;8.5;0" keyTimes="0;0.46;0.48;0.77;0.95;1" dur="3.4s" repeatCount="indefinite" calcMode="spline" keySplines="0 0 1 1;0 0 1 1;0 0.5 0.3 1;0 0 1 1;0 0 1 1"/>
+          <animate attributeName="opacity" values="0;0;1;0;0;0" keyTimes="0;0.46;0.49;0.77;0.95;1" dur="3.4s" repeatCount="indefinite"/>
+        </ellipse>
+
+        <!-- Ring 3 – outermost, last to appear -->
+        <ellipse cx="56" cy="62" rx="0" ry="0" stroke="white" stroke-width="2" fill="none">
+          <animate attributeName="rx" values="0;0;0;43;43;0"   keyTimes="0;0.49;0.51;0.81;0.95;1" dur="3.4s" repeatCount="indefinite" calcMode="spline" keySplines="0 0 1 1;0 0 1 1;0 0.5 0.3 1;0 0 1 1;0 0 1 1"/>
+          <animate attributeName="ry" values="0;0;0;12.5;12.5;0" keyTimes="0;0.49;0.51;0.81;0.95;1" dur="3.4s" repeatCount="indefinite" calcMode="spline" keySplines="0 0 1 1;0 0 1 1;0 0.5 0.3 1;0 0 1 1;0 0 1 1"/>
+          <animate attributeName="opacity" values="0;0;1;0;0;0" keyTimes="0;0.49;0.52;0.81;0.95;1" dur="3.4s" repeatCount="indefinite"/>
+        </ellipse>
+
+        <!-- Splash – small droplet that shoots up on impact then fades -->
+        <circle cx="56" cy="62" r="4.5" fill="white">
+          <animate attributeName="cy"      values="62;62;62;42;62;62" keyTimes="0;0.43;0.45;0.59;0.68;1" dur="3.4s" repeatCount="indefinite" calcMode="spline" keySplines="0 0 1 1;0 0 1 1;0.1 0.9 0.2 1;0 0 1 1;0 0 1 1"/>
+          <animate attributeName="opacity" values="0;0;1;0;0;0"       keyTimes="0;0.43;0.45;0.60;0.65;1" dur="3.4s" repeatCount="indefinite"/>
+        </circle>
+
+        <!-- Falling drop -->
+        <circle cx="56" cy="9" r="7" fill="white">
+          <animateTransform attributeName="transform" type="translate"
+            values="0,0; 0,0; 0,0; 0,53; 0,53; 0,0"
+            keyTimes="0; 0.03; 0.05; 0.43; 0.96; 1"
+            dur="3.4s" repeatCount="indefinite"
+            calcMode="spline"
+            keySplines="0 0 1 1; 0 0 1 1; 0.4 0 1 1; 0 0 1 1; 0 0 1 1"/>
+          <animate attributeName="opacity"
+            values="0; 0; 1; 1; 0; 0"
+            keyTimes="0; 0.03; 0.05; 0.42; 0.44; 1"
+            dur="3.4s" repeatCount="indefinite"/>
+        </circle>
+
+      </svg>
       <div class="header-title">
         <span class="header-main">Permit to Discharge</span>
         <span class="header-sub">FRM013 · Floco</span>
