@@ -774,15 +774,58 @@ function buildCascade(sites) {
     const record = sites.find(s => s.id === id);
     if (record) applySite(record);
   };
+
+  // Pre-select last used site
+  const lastId = localStorage.getItem(LAST_SITE_KEY);
+  if (!lastId) return;
+  const last = sites.find(s => s.id === lastId);
+  if (!last) return;
+
+  // Populate site options for this client
+  clientSel.value = last.client;
+  const siteNames = [...new Set(sites.filter(s => s.client === last.client).map(s => s.site))].sort();
+  siteSel.innerHTML = '<option value="">— Select site —</option>';
+  siteNames.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    siteSel.appendChild(opt);
+  });
+  siteSel.disabled = false;
+  siteSel.value = last.site;
+
+  // Populate basin options if the site has multiple basins
+  const matches = sites.filter(s => s.client === last.client && s.site === last.site);
+  if (matches.length > 1) {
+    basinSel.innerHTML = '<option value="">— Select basin —</option>';
+    matches.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id;
+      opt.textContent = b.basin || '(unnamed basin)';
+      basinSel.appendChild(opt);
+    });
+    basinSel.disabled = false;
+    basinSel.value = last.id;
+  }
+
+  // Auto-fill form fields only when no draft is active (draft takes priority)
+  if (!document.getElementById('client').value) {
+    applySite(last, true);
+  }
 }
 
-function applySite(site) {
+const LAST_SITE_KEY = 'permit_last_site';
+
+function applySite(site, silent) {
   SITE_FIELDS.forEach(field => {
     const el = document.getElementById(field);
     if (el) el.value = site[field] || '';
   });
-  showToast(`Loaded: ${site.client} – ${site.site}`, 'success');
-  scheduleSave();
+  try { localStorage.setItem(LAST_SITE_KEY, site.id); } catch {}
+  if (!silent) {
+    showToast(`Loaded: ${site.client} – ${site.site}`, 'success');
+    scheduleSave();
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
