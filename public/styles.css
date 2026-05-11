@@ -102,9 +102,9 @@ body {
   flex-shrink: 0;
   overflow: visible;
 }
-.header-title { display: flex; flex-direction: column; gap: 1px; }
-.header-sub  { font-size: .68rem; letter-spacing: .12em; opacity: .80; text-transform: uppercase; }
-.header-main { font-size: 1.15rem; font-weight: 700; }
+.header-title { display: flex; flex-direction: column; gap: 2px; }
+.header-main  { font-size: 1.6rem; font-weight: 800; letter-spacing: .08em; line-height: 1; }
+.header-sub   { font-size: .68rem; letter-spacing: .12em; opacity: .80; text-transform: uppercase; }
 
 /* ── Form sections ── */
 form { padding: 12px 12px 0; max-width: 680px; margin: 0 auto; }
