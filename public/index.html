@@ -15,7 +15,6 @@
   <header class="app-header">
     <div class="header-inner">
       <svg class="header-logo" viewBox="0 0 112 84" aria-label="Floco">
-
         <!-- Ring 1 – innermost, first to appear -->
         <ellipse cx="56" cy="62" rx="0" ry="0" stroke="white" stroke-width="3" fill="none">
           <animate attributeName="rx" values="0;0;0;14;14;0" keyTimes="0;0.43;0.45;0.74;0.95;1" dur="3.4s" repeatCount="indefinite" calcMode="spline" keySplines="0 0 1 1;0 0 1 1;0 0.5 0.3 1;0 0 1 1;0 0 1 1"/>
@@ -43,10 +42,10 @@
           <animate attributeName="opacity" values="0;0;1;0;0;0"       keyTimes="0;0.43;0.45;0.60;0.65;1" dur="3.4s" repeatCount="indefinite"/>
         </circle>
 
-        <!-- Falling drop – teardrop: pointed tip at top, rounded bottom -->
-        <path d="M 56,-2 C 52,4 49,9 49,13 A 7,7 0 0,1 63,13 C 63,9 60,4 56,-2 Z" fill="white">
-          <animateTransform attributeName="transform" type="translate"
-            values="0,0; 0,0; 0,0; 0,42; 0,42; 0,0"
+        <!-- Falling drop – same circle as the splash, falls from top to impact point -->
+        <circle cx="56" cy="6" r="4.5" fill="white">
+          <animate attributeName="cy"
+            values="6; 6; 6; 62; 62; 6"
             keyTimes="0; 0.03; 0.05; 0.43; 0.96; 1"
             dur="3.4s" repeatCount="indefinite"
             calcMode="spline"
@@ -55,7 +54,7 @@
             values="0; 0; 1; 1; 0; 0"
             keyTimes="0; 0.03; 0.05; 0.42; 0.44; 1"
             dur="3.4s" repeatCount="indefinite"/>
-        </path>
+        </circle>
 
       </svg>
       <div class="header-title">

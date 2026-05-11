@@ -38,7 +38,7 @@ body {
 }
 .header-inner { display: flex; align-items: center; gap: 12px; }
 .header-logo {
-  height: 48px;
+  height: 64px;
   width: auto;
   flex-shrink: 0;
   overflow: visible;
