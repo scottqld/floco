@@ -94,9 +94,10 @@
       <div class="saved-sites-block" id="savedSitesBlock">
         <p class="field-label">Saved Sites</p>
         <div class="cascade-pickers">
-          <select id="pickClient" class="picker-select" disabled>
-            <option value="">— Select client —</option>
-          </select>
+          <div class="picker-combo">
+            <input type="text" id="pickClient" class="picker-input" placeholder="— Search client —" autocomplete="off" autocorrect="off" spellcheck="false">
+            <ul id="pickClientList" class="picker-dropdown" hidden></ul>
+          </div>
           <select id="pickSite" class="picker-select" disabled>
             <option value="">— Select site —</option>
           </select>
@@ -322,6 +323,9 @@
       <div class="log-modal-header">
         <h2 class="log-modal-title">Recent Submissions</h2>
         <button type="button" id="logClose" class="log-close">✕</button>
+      </div>
+      <div class="log-search-wrap">
+        <input type="search" id="logSearch" class="log-search" placeholder="Search client, site, operator…">
       </div>
       <div id="logList" class="log-list">
         <p class="log-empty">Loading…</p>

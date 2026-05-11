@@ -704,115 +704,113 @@ async function initClients() {
 function buildCascade(sites) {
   if (!Array.isArray(sites)) return;
 
-  const clientSel = document.getElementById('pickClient');
-  const siteSel   = document.getElementById('pickSite');
-  const basinSel  = document.getElementById('pickBasin');
+  const clientInput = document.getElementById('pickClient');
+  const clientList  = document.getElementById('pickClientList');
+  const siteSel     = document.getElementById('pickSite');
+  const basinSel    = document.getElementById('pickBasin');
 
   const clients = [...new Set(sites.map(s => s.client))].sort();
+  let selectedClient = null;
 
-  clientSel.innerHTML = '<option value="">— Select client —</option>';
-  clients.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c;
-    opt.textContent = c;
-    clientSel.appendChild(opt);
-  });
+  function basinLabel(b) {
+    return [b.basin, b.basin_reference].filter(Boolean).join(' · ') || '(unnamed)';
+  }
 
-  clientSel.disabled = clients.length === 0;
-  siteSel.disabled   = true;
-  basinSel.disabled  = true;
-  siteSel.innerHTML  = '<option value="">— Select site —</option>';
-  basinSel.innerHTML = '<option value="">— Select basin —</option>';
-
-  clientSel.onchange = () => {
-    const client = clientSel.value;
+  function populateSites(client) {
     siteSel.innerHTML  = '<option value="">— Select site —</option>';
     basinSel.innerHTML = '<option value="">— Select basin —</option>';
     basinSel.disabled  = true;
-
     if (!client) { siteSel.disabled = true; return; }
-
-    const siteNames = [...new Set(
-      sites.filter(s => s.client === client).map(s => s.site)
-    )].sort();
-
-    siteNames.forEach(name => {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.textContent = name;
-      siteSel.appendChild(opt);
-    });
+    [...new Set(sites.filter(s => s.client === client).map(s => s.site))].sort()
+      .forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name; opt.textContent = name;
+        siteSel.appendChild(opt);
+      });
     siteSel.disabled = false;
+  }
+
+  function showClientDropdown(filter) {
+    const q = (filter || '').toLowerCase();
+    const matches = q ? clients.filter(c => c.toLowerCase().includes(q)) : clients;
+    clientList.innerHTML = '';
+    if (!matches.length) { clientList.hidden = true; return; }
+    matches.forEach(c => {
+      const li = document.createElement('li');
+      li.className = 'picker-option';
+      li.textContent = c;
+      li.addEventListener('mousedown', e => { e.preventDefault(); confirmClient(c); });
+      clientList.appendChild(li);
+    });
+    clientList.hidden = false;
+  }
+
+  function confirmClient(client) {
+    selectedClient = client;
+    clientInput.value = client;
+    clientList.hidden = true;
+    populateSites(client);
+  }
+
+  clientInput.oninput = () => {
+    selectedClient = null;
+    populateSites(null);
+    showClientDropdown(clientInput.value);
+  };
+  clientInput.onfocus = () => showClientDropdown(clientInput.value);
+  clientInput.onblur  = () => {
+    setTimeout(() => {
+      clientList.hidden = true;
+      if (clientInput.value.trim() !== (selectedClient || '')) {
+        clientInput.value = selectedClient || '';
+        if (!selectedClient) populateSites(null);
+      }
+    }, 150);
   };
 
   siteSel.onchange = () => {
-    const client = clientSel.value;
-    const site   = siteSel.value;
+    const site = siteSel.value;
     basinSel.innerHTML = '<option value="">— Select basin —</option>';
-
     if (!site) { basinSel.disabled = true; return; }
 
-    const matches = sites.filter(s => s.client === client && s.site === site);
-
-    if (matches.length === 1) {
-      applySite(matches[0]);
-      basinSel.disabled = true;
-      return;
-    }
+    const matches = sites.filter(s => s.client === selectedClient && s.site === site);
+    if (matches.length === 1) { applySite(matches[0]); basinSel.disabled = true; return; }
 
     matches.forEach(b => {
       const opt = document.createElement('option');
-      opt.value = b.id;
-      opt.textContent = b.basin || '(unnamed basin)';
+      opt.value = b.id; opt.textContent = basinLabel(b);
       basinSel.appendChild(opt);
     });
     basinSel.disabled = false;
   };
 
   basinSel.onchange = () => {
-    const id = basinSel.value;
-    if (!id) return;
-    const record = sites.find(s => s.id === id);
+    const record = sites.find(s => s.id === basinSel.value);
     if (record) applySite(record);
   };
 
-  // Pre-select last used site
+  // Restore last used
   const lastId = localStorage.getItem(LAST_SITE_KEY);
   if (!lastId) return;
   const last = sites.find(s => s.id === lastId);
   if (!last) return;
 
-  // Populate site options for this client
-  clientSel.value = last.client;
-  const siteNames = [...new Set(sites.filter(s => s.client === last.client).map(s => s.site))].sort();
-  siteSel.innerHTML = '<option value="">— Select site —</option>';
-  siteNames.forEach(name => {
-    const opt = document.createElement('option');
-    opt.value = name;
-    opt.textContent = name;
-    siteSel.appendChild(opt);
-  });
-  siteSel.disabled = false;
+  confirmClient(last.client);
   siteSel.value = last.site;
 
-  // Populate basin options if the site has multiple basins
-  const matches = sites.filter(s => s.client === last.client && s.site === last.site);
-  if (matches.length > 1) {
+  const lastMatches = sites.filter(s => s.client === last.client && s.site === last.site);
+  if (lastMatches.length > 1) {
     basinSel.innerHTML = '<option value="">— Select basin —</option>';
-    matches.forEach(b => {
+    lastMatches.forEach(b => {
       const opt = document.createElement('option');
-      opt.value = b.id;
-      opt.textContent = b.basin || '(unnamed basin)';
+      opt.value = b.id; opt.textContent = basinLabel(b);
       basinSel.appendChild(opt);
     });
     basinSel.disabled = false;
     basinSel.value = last.id;
   }
 
-  // Auto-fill form fields only when no draft is active (draft takes priority)
-  if (!document.getElementById('client').value) {
-    applySite(last, true);
-  }
+  if (!document.getElementById('client').value) applySite(last, true);
 }
 
 const LAST_SITE_KEY = 'permit_last_site';
@@ -838,14 +836,31 @@ document.getElementById('logClose').addEventListener('click', () => { document.g
 document.getElementById('logModal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.hidden = true; });
 
 async function openLog() {
-  const modal = document.getElementById('logModal');
-  const list  = document.getElementById('logList');
+  const modal       = document.getElementById('logModal');
+  const list        = document.getElementById('logList');
+  const searchInput = document.getElementById('logSearch');
   modal.hidden = false;
   list.innerHTML = '<p class="log-empty">Loading…</p>';
+  searchInput.value = '';
+
+  let entries = [];
   try {
-    const entries = await apiFetch('/api/log').then(r => r.json());
-    if (!entries.length) { list.innerHTML = '<p class="log-empty">No submissions yet.</p>'; return; }
-    list.innerHTML = entries.map(e => {
+    entries = await apiFetch('/api/log').then(r => r.json());
+  } catch {
+    list.innerHTML = '<p class="log-empty">Could not load — check connection.</p>';
+    return;
+  }
+
+  function renderLog(q) {
+    const filtered = q
+      ? entries.filter(e => [e.client, e.site, e.issuedBy, e.issuedTo, e.dischargeTo]
+          .some(v => v && v.toLowerCase().includes(q.toLowerCase())))
+      : entries;
+    if (!filtered.length) {
+      list.innerHTML = `<p class="log-empty">${entries.length ? 'No matches.' : 'No submissions yet.'}</p>`;
+      return;
+    }
+    list.innerHTML = filtered.map(e => {
       const date = e.timestamp ? new Date(e.timestamp).toLocaleString() : e.validFrom || '';
       return `<div class="log-entry">
         <div class="log-entry-top">
@@ -855,9 +870,10 @@ async function openLog() {
         <div class="log-entry-detail">Issued by ${esc(e.issuedBy)} → ${esc(e.issuedTo)} · ${esc(e.dischargeTo)}</div>
       </div>`;
     }).join('');
-  } catch {
-    list.innerHTML = '<p class="log-empty">Could not load — check connection.</p>';
   }
+
+  renderLog('');
+  searchInput.oninput = () => renderLog(searchInput.value.trim());
 }
 
 function esc(s) {
