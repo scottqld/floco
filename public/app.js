@@ -696,13 +696,31 @@ async function processQueue() {
   if (remaining.length > 0) showToast(`${remaining.length} permit(s) still queued — check connection.`, 'error');
 }
 
-window.addEventListener('online', processQueue);
+// ── Offline indicator ──────────────────────────────────────────────────────
+
+function updateOfflineBanner() {
+  const banner = document.getElementById('offlineBanner');
+  const text   = document.getElementById('offlineBannerText');
+  if (!navigator.onLine) {
+    const q = getQueue();
+    text.textContent = q.length
+      ? `Offline – ${q.length} permit${q.length !== 1 ? 's' : ''} queued`
+      : 'Offline – permits will be queued when back online';
+    banner.hidden = false;
+  } else {
+    banner.hidden = true;
+  }
+}
+
+window.addEventListener('online',  () => { updateOfflineBanner(); processQueue(); });
+window.addEventListener('offline', updateOfflineBanner);
 
 setDefaults();
 showPermitRef();
 loadDraft();    // restore any saved draft (overwrites defaults if draft exists)
 prefillOperatorName();
 initClients();  // load saved sites from server
+updateOfflineBanner(); // show banner immediately if starting offline
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SAVED SITES – CASCADING PICKERS (Client → Site → Basin)
@@ -711,6 +729,7 @@ initClients();  // load saved sites from server
 const SITE_FIELDS = ['client','site','site_address','basin','basin_reference'];
 
 let allSites = [];
+let _confirmClient = null; // exposed by buildCascade for re-issue
 
 async function initClients() {
   try {
@@ -770,6 +789,8 @@ function buildCascade(sites) {
     document.getElementById('clearPickerBtn').hidden = false;
     populateSites(client);
   }
+
+  _confirmClient = confirmClient; // expose for re-issue
 
   const clearBtn = document.getElementById('clearPickerBtn');
   clearBtn.onclick = () => {
@@ -888,16 +909,24 @@ async function openLog() {
       list.innerHTML = `<p class="log-empty">${entries.length ? 'No matches.' : 'No submissions yet.'}</p>`;
       return;
     }
-    list.innerHTML = filtered.map(e => {
+    list.innerHTML = filtered.map((e, i) => {
       const date = e.timestamp ? new Date(e.timestamp).toLocaleString() : e.validFrom || '';
-      return `<div class="log-entry">
+      return `<div class="log-entry" data-idx="${i}">
         <div class="log-entry-top">
           <span class="log-entry-client">${esc(e.client)} – ${esc(e.site)}</span>
           <span class="log-entry-date">${date}</span>
         </div>
         <div class="log-entry-detail">Issued by ${esc(e.issuedBy)} → ${esc(e.issuedTo)} · ${esc(e.dischargeTo)}</div>
+        <button type="button" class="reissue-btn" data-idx="${i}">↩ Re-issue</button>
       </div>`;
     }).join('');
+
+    list.querySelectorAll('.reissue-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx, 10);
+        reissueFromLog(filtered[idx]);
+      });
+    });
   }
 
   renderLog('');
@@ -1078,6 +1107,68 @@ function renderSiteList(sites) {
       }
     });
   });
+}
+
+// ── "Now" button – set Valid From to current date/time ────────────────────
+
+document.getElementById('nowBtn').addEventListener('click', () => {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('valid_from_date').value =
+    `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  document.getElementById('valid_from_time').value =
+    `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  scheduleSave();
+});
+
+// ── Re-issue from log ──────────────────────────────────────────────────────
+
+async function reissueFromLog(entry) {
+  document.getElementById('logModal').hidden = true;
+
+  resetForm();
+
+  // Try to select via cascade picker
+  if (_confirmClient && entry.client) {
+    _confirmClient(entry.client);
+    // Let DOM settle so pickSite gets populated
+    await new Promise(r => setTimeout(r, 0));
+    const siteSel = document.getElementById('pickSite');
+    if (entry.site && siteSel) {
+      siteSel.value = entry.site;
+      siteSel.dispatchEvent(new Event('change'));
+    }
+  } else {
+    // Fallback: fill text fields directly
+    const el = id => document.getElementById(id);
+    if (entry.client) el('client').value = entry.client;
+    if (entry.site)   el('site').value   = entry.site;
+  }
+
+  // Pre-fill discharge to radio
+  if (entry.dischargeTo) {
+    const radio = document.querySelector(
+      `input[name="discharge_to"][value="${CSS.escape(entry.dischargeTo)}"]`
+    );
+    if (radio) radio.checked = true;
+  }
+
+  // Pre-fill issued by name
+  if (entry.issuedBy) {
+    document.getElementById('issued_by_name').value = entry.issuedBy;
+  }
+
+  // Set Valid From to right now
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('valid_from_date').value =
+    `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  document.getElementById('valid_from_time').value =
+    `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  scheduleSave();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast(`Re-issuing for ${entry.client} – ${entry.site}`, '');
 }
 
 // ── Valid-to date presets ──────────────────────────────────────────────────

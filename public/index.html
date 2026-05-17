@@ -89,6 +89,11 @@
     <button type="button" id="a2hsDismiss">✕</button>
   </div>
 
+  <!-- Offline indicator -->
+  <div id="offlineBanner" class="offline-banner" hidden>
+    <span id="offlineBannerText">Offline – permits will be queued</span>
+  </div>
+
   <form id="permitForm" novalidate>
 
     <!-- Permit reference bar -->
@@ -176,6 +181,9 @@
           <label class="field-label required" for="valid_from_time">Time</label>
           <input type="time" id="valid_from_time" name="valid_from_time" required>
         </div>
+      </div>
+      <div class="now-row">
+        <button type="button" id="nowBtn" class="preset-btn">⏱ Now</button>
       </div>
 
       <div class="field-row">

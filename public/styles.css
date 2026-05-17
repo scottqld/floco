@@ -934,3 +934,40 @@ textarea:invalid:not(:placeholder-shown) {
 .site-field-input:focus { outline: none; border-color: var(--brand); }
 
 .site-edit-btns { display: flex; gap: 8px; margin-top: 10px; }
+
+/* ── "Now" button row ── */
+.now-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+
+/* ── Offline banner ── */
+.offline-banner {
+  background: #c0392b;
+  color: #fff;
+  text-align: center;
+  padding: 8px 16px;
+  font-size: .83rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.offline-banner[hidden] { display: none; }
+
+/* ── Re-issue button (log entries) ── */
+.reissue-btn {
+  display: inline-block;
+  margin-top: 7px;
+  background: none;
+  border: 1.5px solid var(--brand);
+  border-radius: 14px;
+  padding: 5px 12px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--brand);
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.reissue-btn:hover { background: var(--brand); color: #fff; }
