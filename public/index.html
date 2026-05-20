@@ -297,10 +297,6 @@
         <input type="text" id="issued_to_name" name="issued_to_name" placeholder="Full name" required autocomplete="name">
       </div>
       <div class="field-group">
-        <label class="field-label" for="cc_email">CC Email <span class="field-hint" style="display:inline">(optional — sends permit copy to this address)</span></label>
-        <input type="email" id="cc_email" name="cc_email" placeholder="email@example.com" autocomplete="email">
-      </div>
-      <div class="field-group">
         <label class="field-label">Signature</label>
         <div class="sig-container">
           <canvas id="sigIssuedTo" class="sig-canvas" width="400" height="150"></canvas>
@@ -333,8 +329,12 @@
 
     <!-- Submit -->
     <div class="submit-area">
+      <div class="field-group cc-field-group">
+        <label class="field-label" for="cc_email">CC Email <span class="field-hint">(optional)</span></label>
+        <input type="email" id="cc_email" name="cc_email" placeholder="Send a copy to this address…" autocomplete="email">
+      </div>
       <button type="submit" id="submitBtn" class="btn btn-primary btn-large">Submit Permit</button>
-      <p class="submit-hint">Generates a Word document and emails it to the permit recipient.</p>
+      <p class="submit-hint">Generates a PDF and emails it to the permit recipient.</p>
     </div>
 
   </form>
