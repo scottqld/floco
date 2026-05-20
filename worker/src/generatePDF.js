@@ -142,11 +142,10 @@ export async function generatePDF(formData) {
   // Details
   const D_LBL = 130;
   [
-    ['Client',          formData.client],
-    ['Site',            formData.site],
-    ['Site Address',    formData.site_address],
-    ['Basin',           formData.basin],
-    ['Basin Reference', formData.basin_reference],
+    ['Client',       formData.client],
+    ['Site',         formData.site],
+    ['Site Address', formData.site_address],
+    ['Basin',        formData.basin],
   ].forEach(([lbl, val]) => {
     drawText(page, lbl + ':', M, y, { font: fBold, size: 10 });
     drawText(page, val || '', M + D_LBL, y, { size: 10, maxWidth: CW - D_LBL });
