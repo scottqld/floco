@@ -28,6 +28,16 @@ function formatDateAU(dateStr, timeStr) {
   return r;
 }
 
+function addDays(dateStr, days) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  const yy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
 // Wrap text into lines that fit within maxWidth using the given font/size
 function wrapText(text, font, size, maxWidth) {
   const lines = [];
@@ -130,7 +140,8 @@ export async function generatePDF(formData) {
   y += 26;
 
   // Note
-  const noteText = `(Note: Discharge permit only valid for 5 days, or until rain event prior to ${validFrom}.)`;
+  const validFromPlus5 = formatDateAU(addDays(formData.valid_from_date, 5));
+  const noteText = `(Note: Discharge permit only valid for 5 days, or until rain event prior to ${validFromPlus5}.)`;
   const noteLines = wrapText(noteText, fItal, 9, CW);
   noteLines.forEach(line => {
     drawText(page, line, M, y, { font: fItal, size: 9 });
