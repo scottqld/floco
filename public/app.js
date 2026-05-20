@@ -578,6 +578,8 @@ function collectData() {
 
 function resetForm() {
   form.reset();
+  currentSiteId = null;
+  updateSaveBtn();
   sigIssuer.clear();
   sigIssuedTo.clear();
   Object.keys(singlePhotos).forEach(k => delete singlePhotos[k]);
@@ -730,6 +732,7 @@ const SITE_FIELDS = ['client','site','site_address','basin','basin_reference'];
 
 let allSites = [];
 let _confirmClient = null; // exposed by buildCascade for re-issue
+let currentSiteId  = null; // id of the site loaded via picker, null if none
 
 async function initClients() {
   try {
@@ -797,11 +800,15 @@ function buildCascade(sites) {
     clientInput.value = '';
     clientInput.dispatchEvent(new Event('input'));
     SITE_FIELDS.forEach(f => { const el = document.getElementById(f); if (el) el.value = ''; });
+    currentSiteId = null;
+    updateSaveBtn();
     scheduleSave();
   };
 
   clientInput.oninput = () => {
     selectedClient = null;
+    currentSiteId  = null;
+    updateSaveBtn();
     populateSites(null);
     showClientDropdown(clientInput.value);
     clearBtn.hidden = true;
@@ -869,11 +876,21 @@ function applySite(site, silent) {
     const el = document.getElementById(field);
     if (el) el.value = site[field] || '';
   });
+  currentSiteId = site.id;
+  updateSaveBtn();
   try { localStorage.setItem(LAST_SITE_KEY, site.id); } catch {}
   if (!silent) {
     showToast(`Loaded: ${site.client} – ${site.site}`, 'success');
     scheduleSave();
   }
+}
+
+function updateSaveBtn() {
+  const btn = document.getElementById('saveSiteBtn');
+  if (!btn) return;
+  btn.innerHTML = currentSiteId
+    ? `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Update this site`
+    : `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save this site`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1198,20 +1215,31 @@ document.getElementById('saveSiteBtn').addEventListener('click', async () => {
   const body = {};
   SITE_FIELDS.forEach(f => { body[f] = document.getElementById(f)?.value.trim() || ''; });
 
+  const btn = document.getElementById('saveSiteBtn');
+  btn.disabled = true;
+
   try {
-    const res = await apiFetch('/api/clients', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
-    const json = await res.json();
-    if (json.duplicate) {
-      showToast('This site is already saved.', '');
+    if (currentSiteId) {
+      // Update existing site
+      await apiFetch('/api/clients/' + currentSiteId, { method: 'PUT', body: JSON.stringify(body) });
+      showToast(`Updated: ${client} – ${site}`, 'success');
     } else {
+      // Create new site
+      const res  = await apiFetch('/api/clients', { method: 'POST', body: JSON.stringify(body) });
+      const json = await res.json();
+      if (json.duplicate) {
+        showToast('This site is already saved.', '');
+        btn.disabled = false;
+        return;
+      }
+      currentSiteId = json.entry?.id || null;
       showToast(`Saved: ${client} – ${site}`, 'success');
-      allSites = await apiFetch('/api/clients').then(r => r.json());
-      buildCascade(allSites);
     }
+    allSites = await apiFetch('/api/clients').then(r => r.json());
+    buildCascade(allSites);
+    updateSaveBtn();
   } catch {
     showToast('Could not save – check connection.', 'error');
   }
+  btn.disabled = false;
 });
