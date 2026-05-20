@@ -118,7 +118,7 @@ export async function generatePDF(formData) {
       const logoData = new Uint8Array(Buffer.from(LOGO_BASE64, 'base64'));
       const logoImg  = await pdfDoc.embedJpg(logoData);
       const dims     = logoImg.scaleToFit(130, 80);
-      page.drawImage(logoImg, { x: M, y: pdfY(y, dims.height), width: dims.width, height: dims.height });
+      page.drawImage(logoImg, { x: M + (CW - dims.width) / 2, y: pdfY(y, dims.height), width: dims.width, height: dims.height });
       y += dims.height + 10;
     } catch { y += 90; }
   }
