@@ -137,17 +137,7 @@ export async function generatePDF(formData) {
   const titleText = 'Permit to Discharge';
   const titleW    = fBold.widthOfTextAtSize(titleText, 20);
   drawText(page, titleText, M + (CW - titleW) / 2, y, { font: fBold, size: 20 });
-  y += 26;
-
-  // Note
-  const validFromPlus5 = formatDateAU(addDays(formData.valid_from_date, 5));
-  const noteText = `(Note: Discharge permit only valid for 5 days, or until rain event prior to ${validFromPlus5}.)`;
-  const noteLines = wrapText(noteText, fItal, 9, CW);
-  noteLines.forEach(line => {
-    drawText(page, line, M, y, { font: fItal, size: 9 });
-    y += 12;
-  });
-  y += 6;
+  y += 30;
 
   // Details
   const D_LBL = 130;
@@ -174,7 +164,17 @@ export async function generatePDF(formData) {
     drawText(page, val || '', M + D_LBL, y, { size: 10, maxWidth: CW - D_LBL });
     y += 15;
   });
-  y += 8;
+  y += 4;
+
+  // Note — below Valid To
+  const validFromPlus5 = formatDateAU(addDays(formData.valid_from_date, 5));
+  const noteText = `(Note: Discharge permit only valid for 5 days, or until rain event prior to ${validFromPlus5}.)`;
+  const noteLines = wrapText(noteText, fItal, 9, CW);
+  noteLines.forEach(line => {
+    drawText(page, line, M, y, { font: fItal, size: 9 });
+    y += 12;
+  });
+  y += 6;
 
   // Water Quality table
   const WQ = [120, 75, 75, CW - 120 - 75 - 75];
