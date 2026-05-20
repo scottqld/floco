@@ -123,8 +123,10 @@ export async function generatePDF(formData) {
     } catch { y += 90; }
   }
 
-  // Title
-  drawText(page, 'Permit to Discharge', M, y, { font: fBold, size: 20 });
+  // Title (centred)
+  const titleText = 'Permit to Discharge';
+  const titleW    = fBold.widthOfTextAtSize(titleText, 20);
+  drawText(page, titleText, M + (CW - titleW) / 2, y, { font: fBold, size: 20 });
   y += 26;
 
   // Note
