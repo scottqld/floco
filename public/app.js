@@ -790,6 +790,13 @@ function buildCascade(sites) {
     clientInput.value = client;
     clientList.hidden = true;
     document.getElementById('clearPickerBtn').hidden = false;
+    // Clear site detail fields so stale data can't carry over to a new client
+    ['site','site_address','basin','basin_reference'].forEach(f => {
+      const el = document.getElementById(f); if (el) el.value = '';
+    });
+    document.getElementById('client').value = client;
+    currentSiteId = null;
+    updateSaveBtn();
     populateSites(client);
   }
 

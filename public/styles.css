@@ -421,7 +421,14 @@ textarea { resize: vertical; min-height: 72px; }
   padding-bottom: 14px;
   border-bottom: 1px solid var(--border);
 }
-.saved-sites-block .field-label { margin-bottom: 8px; }
+.saved-sites-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--brand);
+  margin: 0 0 8px;
+}
 
 .cascade-pickers {
   display: flex;
