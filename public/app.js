@@ -200,7 +200,7 @@ function loadDraft() {
 
   // Restore text / textarea / date / time / number inputs
   const textFields = [
-    'client','site','site_address','basin','basin_reference',
+    'client','site','site_address','basin',
     'valid_from_date','valid_from_time','valid_to_date','valid_to_time',
     'initial_test_ph','initial_test_ntu',
     'after_treatment_ph','after_treatment_ntu',
@@ -728,7 +728,7 @@ updateOfflineBanner(); // show banner immediately if starting offline
 // SAVED SITES – CASCADING PICKERS (Client → Site → Basin)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const SITE_FIELDS = ['client','site','site_address','basin','basin_reference'];
+const SITE_FIELDS = ['client','site','site_address','basin'];
 
 let allSites = [];
 let _confirmClient = null; // exposed by buildCascade for re-issue
@@ -753,7 +753,7 @@ function buildCascade(sites) {
   let selectedClient = null;
 
   function basinLabel(b) {
-    return [b.basin, b.basin_reference].filter(Boolean).join(' · ') || '(unnamed)';
+    return b.basin || '(unnamed)';
   }
 
   function populateSites(client) {
@@ -791,7 +791,7 @@ function buildCascade(sites) {
     clientList.hidden = true;
     document.getElementById('clearPickerBtn').hidden = false;
     // Clear site detail fields so stale data can't carry over to a new client
-    ['site','site_address','basin','basin_reference'].forEach(f => {
+    ['site','site_address','basin'].forEach(f => {
       const el = document.getElementById(f); if (el) el.value = '';
     });
     document.getElementById('client').value = client;
@@ -1025,7 +1025,7 @@ function renderSiteList(sites) {
   const q    = (document.getElementById('siteSearch').value || '').toLowerCase();
 
   const filtered = q
-    ? sites.filter(s => [s.client, s.site, s.basin, s.site_address, s.basin_reference]
+    ? sites.filter(s => [s.client, s.site, s.basin, s.site_address]
         .some(v => v && v.toLowerCase().includes(q)))
     : sites;
 
@@ -1044,7 +1044,7 @@ function renderSiteList(sites) {
         <div class="site-entry" data-id="${e.id}">
           <div class="site-entry-info">
             <span class="site-entry-name">${esc(e.site)}</span>
-            ${e.basin ? `<span class="site-entry-meta">${esc(e.basin)}${e.basin_reference ? ' · ' + esc(e.basin_reference) : ''}</span>` : ''}
+            ${e.basin ? `<span class="site-entry-meta">${esc(e.basin)}</span>` : ''}
             ${e.site_address ? `<span class="site-entry-addr">${esc(e.site_address)}</span>` : ''}
           </div>
           <div class="site-entry-actions">
@@ -1061,7 +1061,6 @@ function renderSiteList(sites) {
           <div class="site-field"><label class="site-field-label">Site</label><input class="site-field-input ef-site" value="${escAttr(e.site)}"></div>
           <div class="site-field"><label class="site-field-label">Address</label><input class="site-field-input ef-addr" value="${escAttr(e.site_address)}"></div>
           <div class="site-field"><label class="site-field-label">Basin</label><input class="site-field-input ef-basin" value="${escAttr(e.basin)}"></div>
-          <div class="site-field"><label class="site-field-label">Basin Ref</label><input class="site-field-input ef-ref" value="${escAttr(e.basin_reference)}"></div>
           <div class="site-edit-btns">
             <button type="button" class="btn btn-primary btn-sm site-save-btn" data-id="${e.id}">Save</button>
             <button type="button" class="btn btn-secondary btn-sm site-cancel-btn" data-id="${e.id}">Cancel</button>
@@ -1094,7 +1093,6 @@ function renderSiteList(sites) {
         site:            form.querySelector('.ef-site').value.trim(),
         site_address:    form.querySelector('.ef-addr').value.trim(),
         basin:           form.querySelector('.ef-basin').value.trim(),
-        basin_reference: form.querySelector('.ef-ref').value.trim(),
       };
       if (!body.client || !body.site) { showToast('Client and Site are required.', 'error'); return; }
       btn.disabled = true;

@@ -39,7 +39,6 @@ function buildEmailBody(d) {
     `Site:             ${d.site || ''}`,
     `Site Address:     ${d.site_address || ''}`,
     `Basin:            ${d.basin || ''}`,
-    `Basin Reference:  ${d.basin_reference || ''}`,
     '',
     `Discharge To:     ${d.discharge_to || ''}`,
     `Valid From:       ${d.valid_from_date || ''} ${d.valid_from_time || ''}`,
