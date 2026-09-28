@@ -71,7 +71,7 @@
       <div class="header-title">
         <span class="header-main">FLOCO</span>
         <span class="header-sub">Permit to Discharge · FRM013</span>
-        <span class="header-version" id="appVersion">v1.0.5</span>
+        <span class="header-version" id="appVersion">v1.0.6</span>
       </div>
       <div class="header-actions">
         <button type="button" id="siteBtn" class="log-btn" title="Manage sites">
@@ -84,17 +84,6 @@
     </div>
   </header>
 
-  <!-- Site selection gate – shown after access code, before form -->
-  <div id="siteGate" class="access-gate" hidden>
-    <div class="access-card">
-      <p class="access-brand">Floco · Permit to Discharge</p>
-      <h2 class="access-heading">New permit</h2>
-      <p class="access-hint">How would you like to start?</p>
-      <button id="siteGateSavedBtn" class="btn btn-primary btn-large access-btn" type="button">Use a saved site</button>
-      <button id="siteGateNewBtn" class="btn btn-secondary btn-large access-btn" type="button">Enter a new site</button>
-    </div>
-  </div>
-
   <!-- Add-to-home-screen nudge -->
   <div id="a2hsBanner" class="a2hs-banner" hidden>
     <span id="a2hsText">Install this app: tap <strong>Share</strong> then <strong>Add to Home Screen</strong></span>
@@ -106,7 +95,7 @@
     <span id="offlineBannerText">Offline – permits will be queued</span>
   </div>
 
-  <form id="permitForm" novalidate hidden>
+  <form id="permitForm" novalidate>
 
     <!-- Permit reference bar -->
     <div class="permit-ref-bar">
@@ -123,7 +112,10 @@
 
       <!-- Saved sites – cascading pickers -->
       <div class="saved-sites-block" id="savedSitesBlock">
-        <p class="saved-sites-label">Select a saved site</p>
+        <div class="saved-sites-header">
+          <p class="saved-sites-label">Select a saved site</p>
+          <button type="button" id="newSiteBtn" class="btn-link">+ New site</button>
+        </div>
         <div class="cascade-pickers">
           <div class="picker-combo">
             <input type="text" id="pickClient" class="picker-input" placeholder="— Search client —" autocomplete="off" autocorrect="off" spellcheck="false">
