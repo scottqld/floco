@@ -71,6 +71,7 @@
       <div class="header-title">
         <span class="header-main">FLOCO</span>
         <span class="header-sub">Permit to Discharge · FRM013</span>
+        <span class="header-version" id="appVersion">v1.0.0</span>
       </div>
       <div class="header-actions">
         <button type="button" id="siteBtn" class="log-btn" title="Manage sites">
@@ -83,6 +84,17 @@
     </div>
   </header>
 
+  <!-- Site selection gate – shown after access code, before form -->
+  <div id="siteGate" class="access-gate" hidden>
+    <div class="access-card">
+      <p class="access-brand">Floco · Permit to Discharge</p>
+      <h2 class="access-heading">New permit</h2>
+      <p class="access-hint">How would you like to start?</p>
+      <button id="siteGateSavedBtn" class="btn btn-primary btn-large access-btn" type="button">Use a saved site</button>
+      <button id="siteGateNewBtn" class="btn btn-secondary btn-large access-btn" type="button">Enter a new site</button>
+    </div>
+  </div>
+
   <!-- Add-to-home-screen nudge -->
   <div id="a2hsBanner" class="a2hs-banner" hidden>
     <span id="a2hsText">Install this app: tap <strong>Share</strong> then <strong>Add to Home Screen</strong></span>
@@ -94,7 +106,7 @@
     <span id="offlineBannerText">Offline – permits will be queued</span>
   </div>
 
-  <form id="permitForm" novalidate>
+  <form id="permitForm" novalidate hidden>
 
     <!-- Permit reference bar -->
     <div class="permit-ref-bar">
@@ -104,7 +116,10 @@
 
     <!-- Section 1: Site Details -->
     <section class="form-section">
-      <h2 class="section-title">Site Details</h2>
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Site Details
+      </h2>
 
       <!-- Saved sites – cascading pickers -->
       <div class="saved-sites-block" id="savedSitesBlock">
@@ -154,7 +169,10 @@
 
     <!-- Section 2: Discharge Details -->
     <section class="form-section">
-      <h2 class="section-title">Discharge Details</h2>
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+        Discharge Details
+      </h2>
 
       <div class="field-group">
         <label class="field-label required">Discharge To</label>
@@ -167,42 +185,56 @@
         </div>
       </div>
 
-      <div class="field-row">
-        <div class="field-group">
-          <label class="field-label required" for="valid_from_date">Valid From – Date</label>
-          <input type="date" id="valid_from_date" name="valid_from_date" required>
+      <div class="permit-period-group">
+        <p class="period-group-label">Permit Period</p>
+        <div class="period-row">
+          <div class="period-col">
+            <p class="period-col-label">From</p>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label required" for="valid_from_date">Date</label>
+                <input type="date" id="valid_from_date" name="valid_from_date" required>
+              </div>
+              <div class="field-group">
+                <label class="field-label required" for="valid_from_time">Time</label>
+                <input type="time" id="valid_from_time" name="valid_from_time" required>
+              </div>
+            </div>
+            <div class="now-row">
+              <button type="button" id="nowBtn" class="preset-btn">⏱ Now</button>
+            </div>
+          </div>
+          <div class="period-divider"></div>
+          <div class="period-col">
+            <p class="period-col-label">To</p>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="valid_to_date">Date</label>
+                <input type="date" id="valid_to_date" name="valid_to_date">
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="valid_to_time">Time</label>
+                <input type="time" id="valid_to_time" name="valid_to_time">
+              </div>
+            </div>
+            <div class="date-presets">
+              <span class="preset-label">Set to:</span>
+              <button type="button" class="preset-btn" data-days="0">Today</button>
+              <button type="button" class="preset-btn" data-days="1">+1 day</button>
+              <button type="button" class="preset-btn" data-days="3">+3 days</button>
+              <button type="button" class="preset-btn" data-days="7">+1 week</button>
+            </div>
+          </div>
         </div>
-        <div class="field-group">
-          <label class="field-label required" for="valid_from_time">Time</label>
-          <input type="time" id="valid_from_time" name="valid_from_time" required>
-        </div>
-      </div>
-      <div class="now-row">
-        <button type="button" id="nowBtn" class="preset-btn">⏱ Now</button>
-      </div>
-
-      <div class="field-row">
-        <div class="field-group">
-          <label class="field-label" for="valid_to_date">Valid To – Date</label>
-          <input type="date" id="valid_to_date" name="valid_to_date">
-        </div>
-        <div class="field-group">
-          <label class="field-label" for="valid_to_time">Time</label>
-          <input type="time" id="valid_to_time" name="valid_to_time">
-        </div>
-      </div>
-      <div class="date-presets">
-        <span class="preset-label">Set to:</span>
-        <button type="button" class="preset-btn" data-days="0">Today</button>
-        <button type="button" class="preset-btn" data-days="1">+1 day</button>
-        <button type="button" class="preset-btn" data-days="3">+3 days</button>
-        <button type="button" class="preset-btn" data-days="7">+1 week</button>
       </div>
     </section>
 
     <!-- Section 3: Initial Test -->
     <section class="form-section">
-      <h2 class="section-title">Initial Test</h2>
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v11l6 6"/><path d="M15 3v11l-6 6"/></svg>
+        Initial Test
+      </h2>
 
       <div class="field-row">
         <div class="field-group">
@@ -236,7 +268,10 @@
 
     <!-- Section 4: After Treatment -->
     <section class="form-section">
-      <h2 class="section-title">After Treatment</h2>
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        After Treatment
+      </h2>
 
       <div class="field-row">
         <div class="field-group">
@@ -270,7 +305,10 @@
 
     <!-- Section 5: Issued By -->
     <section class="form-section">
-      <h2 class="section-title">Issued By</h2>
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Issued By
+      </h2>
       <div class="field-group">
         <label class="field-label required" for="issued_by_name">Name</label>
         <input type="text" id="issued_by_name" name="issued_by_name" placeholder="Full name" required autocomplete="name">
@@ -286,7 +324,10 @@
 
     <!-- Section 6: Issued To -->
     <section class="form-section">
-      <h2 class="section-title">Issued To</h2>
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Issued To
+      </h2>
       <div class="field-group">
         <label class="field-label required" for="issued_to_name">Name</label>
         <input type="text" id="issued_to_name" name="issued_to_name" placeholder="Full name" required autocomplete="name">
@@ -302,7 +343,10 @@
 
     <!-- Section 7: Special Instructions -->
     <section class="form-section">
-      <h2 class="section-title">Special Instructions</h2>
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Special Instructions
+      </h2>
       <div class="field-group">
         <textarea id="special_instructions" name="special_instructions" rows="4" placeholder="Any conditions, instructions or requirements…"></textarea>
       </div>
@@ -310,7 +354,10 @@
 
     <!-- Section 8: Additional Photos -->
     <section class="form-section">
-      <h2 class="section-title">Additional Photos</h2>
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Additional Photos
+      </h2>
       <div class="field-group">
         <small class="field-hint">Instrument readings, site conditions, etc.</small>
         <button type="button" id="addPhotoBtn" class="btn btn-secondary">
@@ -324,6 +371,10 @@
 
     <!-- Submit -->
     <div class="submit-area">
+      <div class="field-group cc-field-group">
+        <label class="field-label" for="to_email">Send To <span class="field-hint">(required)</span></label>
+        <input type="email" id="to_email" name="to_email" placeholder="Recipient email address…" autocomplete="email" required>
+      </div>
       <div class="field-group cc-field-group">
         <label class="field-label" for="cc_email">CC Email <span class="field-hint">(optional)</span></label>
         <input type="email" id="cc_email" name="cc_email" placeholder="Send a copy to this address…" autocomplete="email">

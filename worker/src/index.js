@@ -198,31 +198,33 @@ export default {
 
         const issuedBy  = formData.issued_by_name  || 'Unknown';
         const validFrom = formData.valid_from_date  || '';
-        const toList    = (env.EMAIL_TO || '').split(',').map(e => e.trim()).filter(Boolean);
-        const ccList    = formData.cc_email ? [formData.cc_email] : [];
+        const toList = formData.to_email
+          ? [{ email: formData.to_email }]
+          : (env.EMAIL_TO || '').split(',').map(e => ({ email: e.trim() })).filter(r => r.email);
+        const ccList = formData.cc_email ? [{ email: formData.cc_email }] : [];
 
         const ref = formData.permit_reference || '';
         const emailPayload = {
-          from:        env.EMAIL_FROM,
-          to:          toList,
-          subject:     `${ref ? ref + ' · ' : ''}Permit to Discharge – ${issuedBy} – ${validFrom}`,
-          text:        buildEmailBody(formData),
-          attachments,
+          from:             { email: env.EMAIL_FROM },
+          to:               toList.map(e => ({ email: e.email })),
+          subject:          `${ref ? ref + ' · ' : ''}Permit to Discharge – ${issuedBy} – ${validFrom}`,
+          content:          [{ type: 'text/plain', value: buildEmailBody(formData) }],
+          attachments:      attachments.map(a => ({ content: a.content, filename: a.filename, type: 'application/pdf', disposition: 'attachment' })),
         };
-        if (ccList.length) emailPayload.cc = ccList;
+        if (ccList.length) emailPayload.cc = ccList.map(e => ({ email: e.email }));
 
-        const resendRes = await fetch('https://api.resend.com/emails', {
+        const sgRes = await fetch('https://api.sendgrid.com/v3/mail/send', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+            'Authorization': `Bearer ${env.SENDGRID_API_KEY}`,
             'Content-Type':  'application/json',
           },
           body: JSON.stringify(emailPayload),
         });
 
-        if (!resendRes.ok) {
-          const errText = await resendRes.text();
-          throw new Error(`Resend error ${resendRes.status}: ${errText}`);
+        if (!sgRes.ok) {
+          const errText = await sgRes.text();
+          throw new Error(`SendGrid error ${sgRes.status}: ${errText}`);
         }
 
         await logSubmission(env, formData, timestamp);

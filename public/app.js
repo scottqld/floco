@@ -1,7 +1,14 @@
 'use strict';
 
+const APP_VERSION = 'v1.0.0';
+
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
+
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('appVersion');
+  if (el) el.textContent = APP_VERSION;
+});
 
 // ── Service Worker ─────────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
@@ -53,7 +60,7 @@ async function submitCode() {
   if (valid) {
     localStorage.setItem(CODE_KEY, code);
     hideGate();
-    initClients();
+    showSiteGate();
   } else {
     showGate('Incorrect access code — please try again.');
   }
@@ -62,12 +69,47 @@ async function submitCode() {
 }
 
 (async function initGate() {
-  if (!API) { hideGate(); return; } // local dev — no auth
+  if (!API) { hideGate(); showSiteGate(); return; } // local dev — no auth
   const stored = getStoredCode();
-  if (stored && await validateCode(stored)) { hideGate(); return; }
+  if (stored && await validateCode(stored)) { hideGate(); showSiteGate(); return; }
   localStorage.removeItem(CODE_KEY);
   showGate();
 })();
+
+// ── Site selection gate ────────────────────────────────────────────────────
+
+function showSiteGate() {
+  document.getElementById('siteGate').hidden = false;
+}
+
+function hideSiteGate() {
+  document.getElementById('siteGate').hidden = true;
+  const form = document.getElementById('permitForm');
+  form.hidden = false;
+  initClients();
+}
+
+document.getElementById('siteGateSavedBtn').addEventListener('click', () => {
+  hideSiteGate();
+  // Scroll to the saved sites picker and focus the client input
+  setTimeout(() => {
+    const block = document.getElementById('savedSitesBlock');
+    if (block) block.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const input = document.getElementById('pickClient');
+    if (input) input.focus();
+  }, 100);
+});
+
+document.getElementById('siteGateNewBtn').addEventListener('click', () => {
+  hideSiteGate();
+  // Hide the saved sites picker and focus the client field
+  const block = document.getElementById('savedSitesBlock');
+  if (block) block.hidden = true;
+  setTimeout(() => {
+    const input = document.getElementById('client');
+    if (input) { input.focus(); input.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  }, 100);
+});
 
 // ── Authenticated fetch wrapper ────────────────────────────────────────────
 function apiFetch(path, options = {}) {

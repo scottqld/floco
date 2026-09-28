@@ -84,6 +84,7 @@ body {
   margin-bottom: 10px;
 }
 .access-btn { margin-top: 6px; }
+.access-hint { font-size: .85rem; color: var(--text-muted); margin: 0 0 8px; text-align: center; }
 
 /* ── Header ── */
 .app-header {
@@ -104,7 +105,8 @@ body {
 }
 .header-title { display: flex; flex-direction: column; gap: 2px; }
 .header-main  { font-size: 1.5rem; font-weight: 800; letter-spacing: .08em; line-height: 1; }
-.header-sub   { font-size: .68rem; letter-spacing: .12em; opacity: .80; text-transform: uppercase; }
+.header-sub     { font-size: .68rem; letter-spacing: .12em; opacity: .80; text-transform: uppercase; }
+.header-version { font-size: .60rem; letter-spacing: .08em; opacity: .55; }
 
 /* ── Form sections ── */
 form { padding: 12px 12px 0; max-width: 680px; margin: 0 auto; }
@@ -112,21 +114,25 @@ form { padding: 12px 12px 0; max-width: 680px; margin: 0 auto; }
 .form-section {
   background: var(--card);
   border-radius: var(--radius);
-  padding: 18px 16px;
-  margin-bottom: 14px;
+  padding: 20px 18px;
+  margin-bottom: 12px;
   box-shadow: var(--shadow);
 }
 
 .section-title {
-  font-size: .8rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .78rem;
   font-weight: 700;
-  letter-spacing: .1em;
+  letter-spacing: .12em;
   text-transform: uppercase;
-  color: var(--brand);
-  border-bottom: 2px solid var(--brand);
-  padding-bottom: 8px;
-  margin-bottom: 16px;
+  color: var(--brand-dark);
+  border-left: 3px solid var(--brand);
+  padding: 3px 0 3px 10px;
+  margin-bottom: 18px;
 }
+.section-title svg { flex-shrink: 0; opacity: .7; }
 
 /* ── Fields ── */
 .field-group { margin-bottom: 14px; }
@@ -303,18 +309,58 @@ textarea { resize: vertical; min-height: 72px; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--brand-dark);
-  color: rgba(255,255,255,.85);
-  padding: 7px 16px;
-  font-size: .78rem;
-  max-width: 680px;
-  margin: 0 auto;
+  background: var(--card);
+  border-bottom: 2px solid var(--brand);
+  color: var(--muted);
+  /* stretch to full form width, cancel the form's 12px side padding */
+  margin: -12px -12px 12px;
+  padding: 9px 20px;
+  font-size: .74rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
 }
 .permit-ref-value {
-  font-size: .9rem;
+  font-size: .92rem;
   font-weight: 700;
-  letter-spacing: .06em;
-  color: #fff;
+  letter-spacing: .08em;
+  color: var(--brand-dark);
+}
+
+/* ── Permit period group ── */
+.permit-period-group {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px 8px;
+  margin-top: 6px;
+}
+.period-group-label {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--brand);
+  margin-bottom: 12px;
+}
+.period-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.period-col { padding-bottom: 4px; }
+.period-col-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.period-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 10px 0 14px;
 }
 
 /* ── Date presets ── */
@@ -417,17 +463,31 @@ textarea { resize: vertical; min-height: 72px; }
 
 /* ── Saved sites – cascading pickers ── */
 .saved-sites-block {
-  margin-bottom: 16px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
 }
 .saved-sites-label {
-  font-size: .72rem;
+  font-size: .7rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: .08em;
   color: var(--brand);
-  margin: 0 0 8px;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.saved-sites-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand);
+  flex-shrink: 0;
 }
 
 .cascade-pickers {
@@ -519,7 +579,7 @@ textarea { resize: vertical; min-height: 72px; }
 
 /* ── Single photo capture (per measurement) ── */
 .photo-capture-area { display: flex; flex-direction: column; gap: 10px; }
-.btn-photo { align-self: flex-start; }
+.btn-photo { align-self: flex-start; width: 100%; justify-content: center; }
 
 .single-photo-preview { }
 .single-thumb {
@@ -760,6 +820,12 @@ textarea { resize: vertical; min-height: 72px; }
   color: var(--muted);
   text-align: center;
 }
+#submitBtn {
+  border-radius: 10px;
+  font-size: 1rem;
+  letter-spacing: .03em;
+  box-shadow: 0 4px 14px rgba(30,132,73,.3);
+}
 
 /* ── Toast ── */
 .toast {
@@ -950,8 +1016,8 @@ textarea:invalid:not(:placeholder-shown) {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 6px;
-  margin-bottom: 4px;
+  margin-top: 4px;
+  margin-bottom: 10px;
 }
 
 /* ── Offline banner ── */
