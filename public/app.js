@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.1.0';
+const APP_VERSION = 'v1.1.1';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -305,6 +305,21 @@ function updateBadge(inputId, badgeId, type) {
   badge.className = `reading-badge ${cls}`;
 }
 
+function initialTestsPass() {
+  const ph  = parseFloat(document.getElementById('initial_test_ph')?.value);
+  const ntu = parseFloat(document.getElementById('initial_test_ntu')?.value);
+  const phOk  = !isNaN(ph)  && ph  >= LIMITS.ph.lo && ph  <= LIMITS.ph.hi;
+  const ntuOk = !isNaN(ntu) && ntu <= LIMITS.ntu.pass;
+  return phOk && ntuOk;
+}
+
+function updateAfterTreatmentVisibility() {
+  const section = document.getElementById('afterTreatmentSection');
+  if (!section) return;
+  const pass = initialTestsPass();
+  section.hidden = pass;
+}
+
 // Wire up live badge updates + draft save on each reading field
 [
   ['initial_test_ph',    'badge_initial_ph',  'ph'],
@@ -314,6 +329,7 @@ function updateBadge(inputId, badgeId, type) {
 ].forEach(([inputId, badgeId, type]) => {
   document.getElementById(inputId)?.addEventListener('input', () => {
     updateBadge(inputId, badgeId, type);
+    if (inputId.startsWith('initial_')) updateAfterTreatmentVisibility();
     scheduleSave();
   });
 });
