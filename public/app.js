@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.0.4';
+const APP_VERSION = 'v1.0.5';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -762,7 +762,7 @@ window.addEventListener('offline', updateOfflineBanner);
 
 setDefaults();
 showPermitRef();
-loadDraft();    // restore any saved draft (overwrites defaults if draft exists)
+clearDraft();   // always start fresh on reload
 prefillOperatorName();
 initClients();  // load saved sites from server
 updateOfflineBanner(); // show banner immediately if starting offline
@@ -906,28 +906,6 @@ function buildCascade(sites) {
     if (record) applySite(record);
   };
 
-  // Restore last used
-  const lastId = localStorage.getItem(LAST_SITE_KEY);
-  if (!lastId) return;
-  const last = sites.find(s => s.id === lastId);
-  if (!last) return;
-
-  confirmClient(last.client);
-  siteSel.value = last.site;
-
-  const lastMatches = sites.filter(s => s.client === last.client && s.site === last.site);
-  if (lastMatches.length > 1) {
-    basinSel.innerHTML = '<option value="">— Select basin —</option>';
-    lastMatches.forEach(b => {
-      const opt = document.createElement('option');
-      opt.value = b.id; opt.textContent = basinLabel(b);
-      basinSel.appendChild(opt);
-    });
-    basinSel.disabled = false;
-    basinSel.value = last.id;
-  }
-
-  if (!document.getElementById('client').value) applySite(last, true);
 }
 
 const LAST_SITE_KEY = 'permit_last_site';
