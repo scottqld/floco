@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.2.0';
+const APP_VERSION = 'v1.2.1';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -218,9 +218,7 @@ function saveDraft() {
   const draft = {};
   for (const [k, v] of fd.entries()) draft[k] = v;
 
-  // Save signatures
-  draft._sig_issuer    = sigIssuer    ? sigIssuer.toDataURL()    : null;
-  draft._sig_issued_to = sigIssuedTo  ? sigIssuedTo.toDataURL()  : null;
+  draft._sig_issuer = sigIssuer ? sigIssuer.toDataURL() : null;
 
   // Try saving photos (may exceed quota — handle gracefully)
   try {
@@ -275,9 +273,7 @@ function loadDraft() {
     if (radio) radio.checked = true;
   }
 
-  // Restore signatures
-  if (draft._sig_issuer)    sigIssuer.loadFromDataURL(draft._sig_issuer);
-  if (draft._sig_issued_to) sigIssuedTo.loadFromDataURL(draft._sig_issued_to);
+  if (draft._sig_issuer) sigIssuer.loadFromDataURL(draft._sig_issuer);
 
   // Restore photos
   if (draft._initial_ph_photo)  { singlePhotos.initial_ph_photo  = draft._initial_ph_photo;  renderSinglePreview('initial_ph_photo',  draft._initial_ph_photo);  }
@@ -465,8 +461,7 @@ class SignaturePad {
 }
 
 // ── Init signature pads ────────────────────────────────────────────────────
-const sigIssuer   = new SignaturePad(document.getElementById('sigIssuer'));
-const sigIssuedTo = new SignaturePad(document.getElementById('sigIssuedTo'));
+const sigIssuer = new SignaturePad(document.getElementById('sigIssuer'));
 
 document.querySelectorAll('.sig-clear-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -475,7 +470,7 @@ document.querySelectorAll('.sig-clear-btn').forEach(btn => {
   });
 });
 
-window.addEventListener('load', () => { sigIssuer._resize(); sigIssuedTo._resize(); });
+window.addEventListener('load', () => { sigIssuer._resize(); });
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PHOTO CAPTURE
@@ -636,8 +631,7 @@ function collectData() {
   const fd = new FormData(form);
   const data = {};
   for (const [k, v] of fd.entries()) data[k] = v;
-  data.issued_by_signature   = sigIssuer.toDataURL();
-  data.issued_to_signature   = sigIssuedTo.toDataURL();
+  data.issued_by_signature = sigIssuer.toDataURL();
   data.initial_ph_photo  = singlePhotos.initial_ph_photo  ?? null;
   data.initial_ntu_photo = singlePhotos.initial_ntu_photo ?? null;
   data.after_ph_photo    = singlePhotos.after_ph_photo    ?? null;
@@ -654,7 +648,6 @@ function resetForm() {
   updateSaveBtn();
   lockPermitBody();
   sigIssuer.clear();
-  sigIssuedTo.clear();
   Object.keys(singlePhotos).forEach(k => delete singlePhotos[k]);
   ['initial_ph_photo','initial_ntu_photo','after_ph_photo','after_ntu_photo'].forEach(f => {
     const el = document.getElementById(f + '_preview');
