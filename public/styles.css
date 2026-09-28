@@ -160,6 +160,8 @@ form { padding: 12px 12px 0; max-width: 680px; margin: 0 auto; }
   opacity: 0.75;
 }
 
+.inline-hint { display: inline; font-size: .72rem; font-weight: 400; }
+
 .field-hint {
   display: block;
   font-size: .75rem;
