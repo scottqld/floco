@@ -19,12 +19,28 @@ const FORM_VIEWS = { ptd: 'formPtd', install: 'formInstall', maint: 'formMaint' 
 function switchForm(type) {
   if (type === activeForm) return;
 
-  if (activeForm === 'ptd' && type !== 'ptd') {
-    // Confirm if PTD has data entered
-    const hasData = ['client','issued_by_name','issued_to_name','initial_test_ph','initial_test_ntu']
-      .some(id => document.getElementById(id)?.value.trim());
-    if (hasData && !confirm('Switch forms? Unsaved permit data will be cleared.')) return;
-    resetForm();
+  // Check for unsaved non-site data before switching
+  const hasData = ['issued_by_name','issued_to_name','initial_test_ph','initial_test_ntu']
+    .some(id => document.getElementById(id)?.value.trim());
+  if (hasData && !confirm('Switch forms? Form data will be cleared (site details are kept).')) return;
+
+  // Preserve site state across tab switch
+  const savedSiteId = currentSiteId;
+  const savedSiteValues = Object.fromEntries(
+    SITE_FIELDS.map(f => [f, document.getElementById(f)?.value || ''])
+  );
+
+  resetForm();
+
+  // Restore site
+  if (savedSiteId) {
+    SITE_FIELDS.forEach(f => {
+      const el = document.getElementById(f);
+      if (el) el.value = savedSiteValues[f];
+    });
+    currentSiteId = savedSiteId;
+    lockSiteFields();
+    unlockPermitBody();
   }
 
   activeForm = type;
@@ -37,8 +53,6 @@ function switchForm(type) {
     const el = document.getElementById(id);
     if (el) el.hidden = (key !== type);
   });
-
-  lockPermitBody();
 }
 
 document.querySelectorAll('.form-tab').forEach(btn => {
