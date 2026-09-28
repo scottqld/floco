@@ -150,6 +150,13 @@ form { padding: 12px 12px 0; max-width: 680px; margin: 0 auto; }
   color: var(--danger);
 }
 
+.field-locked {
+  background: var(--surface-alt, #f0f0f0) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed !important;
+  opacity: 0.75;
+}
+
 .field-hint {
   display: block;
   font-size: .75rem;

@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.0.1';
+const APP_VERSION = 'v1.0.2';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -102,6 +102,7 @@ document.getElementById('siteGateSavedBtn').addEventListener('click', () => {
 
 document.getElementById('siteGateNewBtn').addEventListener('click', () => {
   hideSiteGate();
+  unlockSiteFields();
   // Hide the saved sites picker and focus the client field
   const block = document.getElementById('savedSitesBlock');
   if (block) block.hidden = true;
@@ -851,6 +852,7 @@ function buildCascade(sites) {
     SITE_FIELDS.forEach(f => { const el = document.getElementById(f); if (el) el.value = ''; });
     currentSiteId = null;
     updateSaveBtn();
+    unlockSiteFields();
     scheduleSave();
   };
 
@@ -922,6 +924,24 @@ function buildCascade(sites) {
 
 const LAST_SITE_KEY = 'permit_last_site';
 
+function lockSiteFields() {
+  SITE_FIELDS.forEach(f => {
+    const el = document.getElementById(f);
+    if (el) { el.readOnly = true; el.classList.add('field-locked'); }
+  });
+  const btn = document.getElementById('saveSiteBtn');
+  if (btn) btn.hidden = true;
+}
+
+function unlockSiteFields() {
+  SITE_FIELDS.forEach(f => {
+    const el = document.getElementById(f);
+    if (el) { el.readOnly = false; el.classList.remove('field-locked'); }
+  });
+  const btn = document.getElementById('saveSiteBtn');
+  if (btn) btn.hidden = false;
+}
+
 function applySite(site, silent) {
   SITE_FIELDS.forEach(field => {
     const el = document.getElementById(field);
@@ -929,6 +949,7 @@ function applySite(site, silent) {
   });
   currentSiteId = site.id;
   updateSaveBtn();
+  lockSiteFields();
   try { localStorage.setItem(LAST_SITE_KEY, site.id); } catch {}
   if (!silent) {
     showToast(`Loaded: ${site.client} – ${site.site}`, 'success');
