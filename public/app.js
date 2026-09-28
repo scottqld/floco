@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.1.3';
+const APP_VERSION = 'v1.2.0';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -8,6 +8,41 @@ const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL :
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.getElementById('appVersion');
   if (el) el.textContent = APP_VERSION;
+});
+
+// ── Form selector ──────────────────────────────────────────────────────────
+
+let activeForm = 'ptd';
+
+const FORM_VIEWS = { ptd: 'formPtd', install: 'formInstall', maint: 'formMaint' };
+
+function switchForm(type) {
+  if (type === activeForm) return;
+
+  if (activeForm === 'ptd' && type !== 'ptd') {
+    // Confirm if PTD has data entered
+    const hasData = ['client','issued_by_name','issued_to_name','initial_test_ph','initial_test_ntu']
+      .some(id => document.getElementById(id)?.value.trim());
+    if (hasData && !confirm('Switch forms? Unsaved permit data will be cleared.')) return;
+    resetForm();
+  }
+
+  activeForm = type;
+
+  document.querySelectorAll('.form-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.form === type);
+  });
+
+  Object.entries(FORM_VIEWS).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.hidden = (key !== type);
+  });
+
+  lockPermitBody();
+}
+
+document.querySelectorAll('.form-tab').forEach(btn => {
+  btn.addEventListener('click', () => switchForm(btn.dataset.form));
 });
 
 // ── Service Worker ─────────────────────────────────────────────────────────

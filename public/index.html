@@ -71,7 +71,7 @@
       <div class="header-title">
         <span class="header-main">FLOCO</span>
         <span class="header-sub">Permit to Discharge · FRM013</span>
-        <span class="header-version" id="appVersion">v1.1.3</span>
+        <span class="header-version" id="appVersion">v1.2.0</span>
       </div>
       <div class="header-actions">
         <button type="button" id="siteBtn" class="log-btn" title="Manage sites">
@@ -96,6 +96,13 @@
   </div>
 
   <form id="permitForm" novalidate>
+
+    <!-- Form type selector -->
+    <div class="form-selector">
+      <button type="button" class="form-tab active" data-form="ptd">Permit to Discharge</button>
+      <button type="button" class="form-tab" data-form="install">Installation Checklist</button>
+      <button type="button" class="form-tab" data-form="maint">Maintenance Checklist</button>
+    </div>
 
     <!-- Permit reference bar -->
     <div class="permit-ref-bar">
@@ -161,6 +168,9 @@
 
     <!-- Permit body – locked until site is confirmed -->
     <div id="permitBody" class="permit-body-locked" inert>
+
+    <!-- PTD form -->
+    <div id="formPtd" class="form-view">
 
     <!-- Section 2: Discharge Details -->
     <section class="form-section">
@@ -402,6 +412,26 @@
       </div>
       <button type="submit" id="submitBtn" class="btn btn-primary btn-large">Submit Permit</button>
       <p class="submit-hint">Generates a PDF and emails it to the permit recipient.</p>
+    </div>
+
+    </div><!-- /formPtd -->
+
+    <!-- Installation Checklist placeholder -->
+    <div id="formInstall" class="form-view" hidden>
+      <div class="form-placeholder">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <p>Dosing System Installation Checklist</p>
+        <small>Coming soon</small>
+      </div>
+    </div>
+
+    <!-- Maintenance Checklist placeholder -->
+    <div id="formMaint" class="form-view" hidden>
+      <div class="form-placeholder">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <p>Dosing System Maintenance Checklist</p>
+        <small>Coming soon</small>
+      </div>
     </div>
 
     </div><!-- /permitBody -->

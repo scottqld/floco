@@ -26,6 +26,53 @@ body {
   padding-bottom: calc(32px + env(safe-area-inset-bottom));
 }
 
+/* ── Form selector tabs ── */
+.form-selector {
+  display: flex;
+  gap: 0;
+  background: var(--card);
+  border-bottom: 2px solid var(--border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.form-selector::-webkit-scrollbar { display: none; }
+
+.form-tab {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 10px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s;
+  text-align: center;
+}
+.form-tab:hover { color: var(--brand); }
+.form-tab.active {
+  color: var(--brand-dark);
+  border-bottom-color: var(--brand);
+}
+
+/* ── Form view placeholder ── */
+.form-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  color: var(--muted);
+  text-align: center;
+}
+.form-placeholder p { font-size: 1rem; font-weight: 600; }
+.form-placeholder small { font-size: .82rem; }
+
 /* ── Access gate ── */
 .access-gate {
   position: fixed;
