@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.0.3';
+const APP_VERSION = 'v1.0.4';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -932,20 +932,28 @@ function buildCascade(sites) {
 
 const LAST_SITE_KEY = 'permit_last_site';
 
+let siteFieldsLocked = false;
+
 function lockSiteFields() {
+  siteFieldsLocked = true;
   SITE_FIELDS.forEach(f => {
     const el = document.getElementById(f);
     if (el) { el.readOnly = true; el.classList.add('field-locked'); }
   });
+  const span = document.getElementById('saveSiteBtnText');
+  if (span) span.textContent = 'Update this site';
   const btn = document.getElementById('saveSiteBtn');
-  if (btn) btn.hidden = true;
+  if (btn) btn.hidden = false;
 }
 
 function unlockSiteFields() {
+  siteFieldsLocked = false;
   SITE_FIELDS.forEach(f => {
     const el = document.getElementById(f);
     if (el) { el.readOnly = false; el.classList.remove('field-locked'); }
   });
+  const span = document.getElementById('saveSiteBtnText');
+  if (span) span.textContent = currentSiteId ? 'Save changes' : 'Save this site';
   const btn = document.getElementById('saveSiteBtn');
   if (btn) btn.hidden = false;
 }
@@ -1281,6 +1289,13 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
 // ── Save new site entry ────────────────────────────────────────────────────
 
 document.getElementById('saveSiteBtn').addEventListener('click', async () => {
+  // If fields are locked, clicking "Update this site" unlocks them for editing
+  if (siteFieldsLocked) {
+    unlockSiteFields();
+    document.getElementById('client').focus();
+    return;
+  }
+
   const client = document.getElementById('client').value.trim();
   const site   = document.getElementById('site').value.trim();
   if (!client || !site) {
@@ -1297,6 +1312,7 @@ document.getElementById('saveSiteBtn').addEventListener('click', async () => {
     if (currentSiteId) {
       // Update existing site
       await apiFetch('/api/clients/' + currentSiteId, { method: 'PUT', body: JSON.stringify(body) });
+      lockSiteFields();
       showToast(`Updated: ${client} – ${site}`, 'success');
     } else {
       // Create new site
