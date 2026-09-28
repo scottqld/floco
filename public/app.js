@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.1.2';
+const APP_VERSION = 'v1.1.3';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -81,6 +81,7 @@ document.getElementById('newSiteBtn').addEventListener('click', () => {
   SITE_FIELDS.forEach(f => { const el = document.getElementById(f); if (el) el.value = ''; });
   currentSiteId = null;
   unlockSiteFields();
+  lockPermitBody();
   const block = document.getElementById('savedSitesBlock');
   if (block) block.hidden = true;
   setTimeout(() => {
@@ -616,6 +617,7 @@ function resetForm() {
   form.reset();
   currentSiteId = null;
   updateSaveBtn();
+  lockPermitBody();
   sigIssuer.clear();
   sigIssuedTo.clear();
   Object.keys(singlePhotos).forEach(k => delete singlePhotos[k]);
@@ -759,6 +761,7 @@ setDefaults();
 showPermitRef();
 clearDraft();   // always start fresh on reload
 prefillOperatorName();
+lockPermitBody();
 initClients();  // load saved sites from server
 updateOfflineBanner(); // show banner immediately if starting offline
 
@@ -852,6 +855,7 @@ function buildCascade(sites) {
     currentSiteId = null;
     updateSaveBtn();
     unlockSiteFields();
+    lockPermitBody();
     scheduleSave();
   };
 
@@ -963,6 +967,20 @@ const LAST_SITE_KEY = 'permit_last_site';
 
 let siteFieldsLocked = false;
 
+function lockPermitBody() {
+  const body = document.getElementById('permitBody');
+  if (!body) return;
+  body.classList.add('permit-body-locked');
+  body.setAttribute('inert', '');
+}
+
+function unlockPermitBody() {
+  const body = document.getElementById('permitBody');
+  if (!body) return;
+  body.classList.remove('permit-body-locked');
+  body.removeAttribute('inert');
+}
+
 function lockSiteFields() {
   siteFieldsLocked = true;
   SITE_FIELDS.forEach(f => {
@@ -996,6 +1014,7 @@ function applySite(site, silent) {
   currentSiteId = site.id;
   updateSaveBtn();
   lockSiteFields();
+  unlockPermitBody();
   try { localStorage.setItem(LAST_SITE_KEY, site.id); } catch {}
   if (!silent) {
     showToast(`Loaded: ${site.client} – ${site.site}`, 'success');
@@ -1343,6 +1362,7 @@ document.getElementById('saveSiteBtn').addEventListener('click', async () => {
       // Update existing site
       await apiFetch('/api/clients/' + currentSiteId, { method: 'PUT', body: JSON.stringify(body) });
       lockSiteFields();
+      unlockPermitBody();
       showToast(`Updated: ${client} – ${site}`, 'success');
     } else {
       // Create new site
@@ -1354,6 +1374,7 @@ document.getElementById('saveSiteBtn').addEventListener('click', async () => {
         return;
       }
       currentSiteId = json.entry?.id || null;
+      unlockPermitBody();
       showToast(`Saved: ${client} – ${site}`, 'success');
     }
     allSites = await apiFetch('/api/clients').then(r => r.json());

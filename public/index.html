@@ -71,7 +71,7 @@
       <div class="header-title">
         <span class="header-main">FLOCO</span>
         <span class="header-sub">Permit to Discharge · FRM013</span>
-        <span class="header-version" id="appVersion">v1.1.2</span>
+        <span class="header-version" id="appVersion">v1.1.3</span>
       </div>
       <div class="header-actions">
         <button type="button" id="siteBtn" class="log-btn" title="Manage sites">
@@ -158,6 +158,9 @@
         </button>
       </div>
     </section>
+
+    <!-- Permit body – locked until site is confirmed -->
+    <div id="permitBody" class="permit-body-locked" inert>
 
     <!-- Section 2: Discharge Details -->
     <section class="form-section">
@@ -400,6 +403,8 @@
       <button type="submit" id="submitBtn" class="btn btn-primary btn-large">Submit Permit</button>
       <p class="submit-hint">Generates a PDF and emails it to the permit recipient.</p>
     </div>
+
+    </div><!-- /permitBody -->
 
   </form>
 

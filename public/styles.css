@@ -153,6 +153,14 @@ form { padding: 12px 12px 0; max-width: 680px; margin: 0 auto; }
   color: var(--danger);
 }
 
+/* Permit body locked until site is confirmed */
+.permit-body-locked {
+  opacity: 0.35;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.25s ease;
+}
+
 .field-locked {
   background: var(--surface-alt, #f0f0f0) !important;
   color: var(--text-muted) !important;
