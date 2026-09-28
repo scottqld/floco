@@ -39,10 +39,9 @@ body {
 .form-selector::-webkit-scrollbar { display: none; }
 
 .form-tab {
-  flex: 1;
-  min-width: 0;
-  padding: 12px 10px;
-  font-size: .8rem;
+  flex: 0 0 auto;
+  padding: 12px 16px;
+  font-size: .82rem;
   font-weight: 600;
   color: var(--muted);
   background: none;
