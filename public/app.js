@@ -876,6 +876,8 @@ function buildCascade(sites) {
   siteSel.onchange = () => {
     const site = siteSel.value;
     basinSel.innerHTML = '<option value="">— Select basin —</option>';
+    // Clear site fields so stale values don't linger while user picks basin
+    ['site','site_address','basin'].forEach(f => { const el = document.getElementById(f); if (el) el.value = ''; });
     if (!site) { basinSel.disabled = true; return; }
 
     const matches = sites.filter(s => s.client === selectedClient && s.site === site);
