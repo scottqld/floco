@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.0.6';
+const APP_VERSION = 'v1.0.7';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -78,6 +78,8 @@ async function submitCode() {
 // ── New site button ────────────────────────────────────────────────────────
 
 document.getElementById('newSiteBtn').addEventListener('click', () => {
+  SITE_FIELDS.forEach(f => { const el = document.getElementById(f); if (el) el.value = ''; });
+  currentSiteId = null;
   unlockSiteFields();
   const block = document.getElementById('savedSitesBlock');
   if (block) block.hidden = true;
