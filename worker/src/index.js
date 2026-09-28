@@ -184,6 +184,20 @@ export default {
           },
         ];
 
+        // Attach reading photos
+        const readingPhotos = [
+          ['initial_ph_photo',  'Initial-pH'],
+          ['initial_ntu_photo', 'Initial-NTU'],
+          ['after_ph_photo',    'After-pH'],
+          ['after_ntu_photo',   'After-NTU'],
+        ];
+        readingPhotos.forEach(([field, label]) => {
+          const dataUrl = formData[field];
+          if (!dataUrl) return;
+          const m = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+          if (m) attachments.push({ filename: `${label}.${m[1]}`, content: m[2] });
+        });
+
         if (Array.isArray(formData.additional_photos)) {
           formData.additional_photos.forEach((photoDataUrl, i) => {
             const m = photoDataUrl.match(/^data:image\/(\w+);base64,(.+)$/);

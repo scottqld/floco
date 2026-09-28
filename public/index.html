@@ -71,7 +71,7 @@
       <div class="header-title">
         <span class="header-main">FLOCO</span>
         <span class="header-sub">Permit to Discharge · FRM013</span>
-        <span class="header-version" id="appVersion">v1.1.1</span>
+        <span class="header-version" id="appVersion">v1.1.2</span>
       </div>
       <div class="header-actions">
         <button type="button" id="siteBtn" class="log-btn" title="Manage sites">
@@ -245,16 +245,29 @@
         </div>
       </div>
 
-      <div class="field-group">
-        <label class="field-label">Site Photo</label>
-        <div class="photo-capture-area" id="initialPhotoArea">
-          <button type="button" class="btn btn-secondary btn-photo" data-target="initial_test_photo">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            Take Photo
-          </button>
-          <div class="single-photo-preview" id="initial_test_photo_preview"></div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">pH Photo</label>
+          <div class="photo-capture-area">
+            <button type="button" class="btn btn-secondary btn-photo" data-target="initial_ph_photo">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Take Photo
+            </button>
+            <div class="single-photo-preview" id="initial_ph_photo_preview"></div>
+          </div>
+          <input type="file" class="photo-file-input" data-field="initial_ph_photo" accept="image/*" capture="environment" style="display:none">
         </div>
-        <input type="file" class="photo-file-input" data-field="initial_test_photo" accept="image/*" capture="environment" style="display:none">
+        <div class="field-group">
+          <label class="field-label">NTU Photo</label>
+          <div class="photo-capture-area">
+            <button type="button" class="btn btn-secondary btn-photo" data-target="initial_ntu_photo">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Take Photo
+            </button>
+            <div class="single-photo-preview" id="initial_ntu_photo_preview"></div>
+          </div>
+          <input type="file" class="photo-file-input" data-field="initial_ntu_photo" accept="image/*" capture="environment" style="display:none">
+        </div>
       </div>
     </section>
 
@@ -282,16 +295,29 @@
         </div>
       </div>
 
-      <div class="field-group">
-        <label class="field-label">Site Photo</label>
-        <div class="photo-capture-area" id="afterPhotoArea">
-          <button type="button" class="btn btn-secondary btn-photo" data-target="after_treatment_photo">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            Take Photo
-          </button>
-          <div class="single-photo-preview" id="after_treatment_photo_preview"></div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">pH Photo</label>
+          <div class="photo-capture-area">
+            <button type="button" class="btn btn-secondary btn-photo" data-target="after_ph_photo">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Take Photo
+            </button>
+            <div class="single-photo-preview" id="after_ph_photo_preview"></div>
+          </div>
+          <input type="file" class="photo-file-input" data-field="after_ph_photo" accept="image/*" capture="environment" style="display:none">
         </div>
-        <input type="file" class="photo-file-input" data-field="after_treatment_photo" accept="image/*" capture="environment" style="display:none">
+        <div class="field-group">
+          <label class="field-label">NTU Photo</label>
+          <div class="photo-capture-area">
+            <button type="button" class="btn btn-secondary btn-photo" data-target="after_ntu_photo">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Take Photo
+            </button>
+            <div class="single-photo-preview" id="after_ntu_photo_preview"></div>
+          </div>
+          <input type="file" class="photo-file-input" data-field="after_ntu_photo" accept="image/*" capture="environment" style="display:none">
+        </div>
       </div>
     </section>
 

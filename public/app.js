@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.1.1';
+const APP_VERSION = 'v1.1.2';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -188,8 +188,10 @@ function saveDraft() {
 
   // Try saving photos (may exceed quota — handle gracefully)
   try {
-    draft._initial_photo   = singlePhotos.initial_test_photo   ?? null;
-    draft._after_photo     = singlePhotos.after_treatment_photo ?? null;
+    draft._initial_ph_photo  = singlePhotos.initial_ph_photo  ?? null;
+    draft._initial_ntu_photo = singlePhotos.initial_ntu_photo ?? null;
+    draft._after_ph_photo    = singlePhotos.after_ph_photo    ?? null;
+    draft._after_ntu_photo   = singlePhotos.after_ntu_photo   ?? null;
     draft._extra_photos    = [...extraPhotos];
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
   } catch {
@@ -242,14 +244,10 @@ function loadDraft() {
   if (draft._sig_issued_to) sigIssuedTo.loadFromDataURL(draft._sig_issued_to);
 
   // Restore photos
-  if (draft._initial_photo) {
-    singlePhotos.initial_test_photo = draft._initial_photo;
-    renderSinglePreview('initial_test_photo', draft._initial_photo);
-  }
-  if (draft._after_photo) {
-    singlePhotos.after_treatment_photo = draft._after_photo;
-    renderSinglePreview('after_treatment_photo', draft._after_photo);
-  }
+  if (draft._initial_ph_photo)  { singlePhotos.initial_ph_photo  = draft._initial_ph_photo;  renderSinglePreview('initial_ph_photo',  draft._initial_ph_photo);  }
+  if (draft._initial_ntu_photo) { singlePhotos.initial_ntu_photo = draft._initial_ntu_photo; renderSinglePreview('initial_ntu_photo', draft._initial_ntu_photo); }
+  if (draft._after_ph_photo)    { singlePhotos.after_ph_photo    = draft._after_ph_photo;    renderSinglePreview('after_ph_photo',    draft._after_ph_photo);    }
+  if (draft._after_ntu_photo)   { singlePhotos.after_ntu_photo   = draft._after_ntu_photo;   renderSinglePreview('after_ntu_photo',   draft._after_ntu_photo);   }
   if (Array.isArray(draft._extra_photos)) {
     draft._extra_photos.forEach(p => {
       extraPhotos.push(p);
@@ -604,8 +602,10 @@ function collectData() {
   for (const [k, v] of fd.entries()) data[k] = v;
   data.issued_by_signature   = sigIssuer.toDataURL();
   data.issued_to_signature   = sigIssuedTo.toDataURL();
-  data.initial_test_photo    = singlePhotos.initial_test_photo    ?? null;
-  data.after_treatment_photo = singlePhotos.after_treatment_photo ?? null;
+  data.initial_ph_photo  = singlePhotos.initial_ph_photo  ?? null;
+  data.initial_ntu_photo = singlePhotos.initial_ntu_photo ?? null;
+  data.after_ph_photo    = singlePhotos.after_ph_photo    ?? null;
+  data.after_ntu_photo   = singlePhotos.after_ntu_photo   ?? null;
   data.additional_photos     = [...extraPhotos];
   data.cc_email              = document.getElementById('cc_email').value.trim();
   data.permit_reference      = document.getElementById('permitRef').textContent;
@@ -619,8 +619,10 @@ function resetForm() {
   sigIssuer.clear();
   sigIssuedTo.clear();
   Object.keys(singlePhotos).forEach(k => delete singlePhotos[k]);
-  document.getElementById('initial_test_photo_preview').innerHTML  = '';
-  document.getElementById('after_treatment_photo_preview').innerHTML = '';
+  ['initial_ph_photo','initial_ntu_photo','after_ph_photo','after_ntu_photo'].forEach(f => {
+    const el = document.getElementById(f + '_preview');
+    if (el) el.innerHTML = '';
+  });
   extraPhotos.length = 0;
   extraPhotoGrid.innerHTML = '';
   ['badge_initial_ph','badge_initial_ntu','badge_after_ph','badge_after_ntu']
