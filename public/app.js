@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.0.2';
+const APP_VERSION = 'v1.0.3';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -883,7 +883,15 @@ function buildCascade(sites) {
     if (!site) { basinSel.disabled = true; return; }
 
     const matches = sites.filter(s => s.client === selectedClient && s.site === site);
-    if (matches.length === 1) { applySite(matches[0]); basinSel.disabled = true; return; }
+    if (matches.length === 1) {
+      const opt = document.createElement('option');
+      opt.value = matches[0].id; opt.textContent = basinLabel(matches[0]);
+      basinSel.appendChild(opt);
+      basinSel.value = matches[0].id;
+      basinSel.disabled = true;
+      applySite(matches[0]);
+      return;
+    }
 
     matches.forEach(b => {
       const opt = document.createElement('option');
