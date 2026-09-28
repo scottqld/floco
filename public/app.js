@@ -645,6 +645,7 @@ function collectData() {
 function resetForm() {
   form.reset();
   currentSiteId = null;
+  issuedToUserEdited = false;
   updateSaveBtn();
   lockPermitBody();
   sigIssuer.clear();
@@ -731,6 +732,13 @@ function saveOperatorName() {
   const name = document.getElementById('issued_by_name')?.value.trim();
   if (name) localStorage.setItem(OPERATOR_KEY, name);
 }
+
+// Prevent browser autofill from copying Issued By into Issued To
+let issuedToUserEdited = false;
+document.getElementById('issued_to_name').addEventListener('input', () => { issuedToUserEdited = true; });
+document.getElementById('issued_by_name').addEventListener('change', () => {
+  if (!issuedToUserEdited) document.getElementById('issued_to_name').value = '';
+});
 
 // ── Offline queue ──────────────────────────────────────────────────────────
 const QUEUE_KEY = 'permit_queue';
