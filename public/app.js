@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.0.7';
+const APP_VERSION = 'v1.0.8';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -781,12 +781,16 @@ function buildCascade(sites) {
     basinSel.innerHTML = '<option value="">— Select basin —</option>';
     basinSel.disabled  = true;
     if (!client) { siteSel.disabled = true; return; }
-    [...new Set(sites.filter(s => s.client === client).map(s => s.site))].sort()
-      .forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name; opt.textContent = name;
-        siteSel.appendChild(opt);
-      });
+    const siteNames = [...new Set(sites.filter(s => s.client === client).map(s => s.site))].sort();
+    siteNames.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      siteSel.appendChild(opt);
+    });
+    // Allow adding a new site under this client
+    const newOpt = document.createElement('option');
+    newOpt.value = '__new__'; newOpt.textContent = '+ New site';
+    siteSel.appendChild(newOpt);
     siteSel.disabled = false;
   }
 
@@ -855,31 +859,83 @@ function buildCascade(sites) {
   siteSel.onchange = () => {
     const site = siteSel.value;
     basinSel.innerHTML = '<option value="">— Select basin —</option>';
-    // Clear site fields so stale values don't linger while user picks basin
     ['site','site_address','basin'].forEach(f => { const el = document.getElementById(f); if (el) el.value = ''; });
+
     if (!site) { basinSel.disabled = true; return; }
+
+    // "+ New site" chosen — lock client, unlock site/address/basin for entry
+    if (site === '__new__') {
+      basinSel.disabled = true;
+      currentSiteId = null;
+      // Lock client field only
+      const clientEl = document.getElementById('client');
+      if (clientEl) { clientEl.readOnly = true; clientEl.classList.add('field-locked'); }
+      ['site','site_address','basin'].forEach(f => {
+        const el = document.getElementById(f);
+        if (el) { el.readOnly = false; el.classList.remove('field-locked'); el.value = ''; }
+      });
+      updateSaveBtn();
+      const btn = document.getElementById('saveSiteBtn');
+      if (btn) btn.hidden = false;
+      setTimeout(() => document.getElementById('site')?.focus(), 50);
+      return;
+    }
 
     const matches = sites.filter(s => s.client === selectedClient && s.site === site);
     if (matches.length === 1) {
       const opt = document.createElement('option');
       opt.value = matches[0].id; opt.textContent = basinLabel(matches[0]);
       basinSel.appendChild(opt);
+      const newOpt = document.createElement('option');
+      newOpt.value = '__new__'; newOpt.textContent = '+ New basin';
+      basinSel.appendChild(newOpt);
       basinSel.value = matches[0].id;
-      basinSel.disabled = true;
+      basinSel.disabled = false;
       applySite(matches[0]);
       return;
     }
 
+    // Multiple basins — add existing ones plus a "+ New basin" option
     matches.forEach(b => {
       const opt = document.createElement('option');
       opt.value = b.id; opt.textContent = basinLabel(b);
       basinSel.appendChild(opt);
     });
+    const newOpt = document.createElement('option');
+    newOpt.value = '__new__'; newOpt.textContent = '+ New basin';
+    basinSel.appendChild(newOpt);
     basinSel.disabled = false;
+    // Lock client + site, unlock site_address + basin for potential new entry
+    document.getElementById('client').value = selectedClient;
+    document.getElementById('site').value   = site;
+    ['client','site'].forEach(f => {
+      const el = document.getElementById(f);
+      if (el) { el.readOnly = true; el.classList.add('field-locked'); }
+    });
   };
 
   basinSel.onchange = () => {
-    const record = sites.find(s => s.id === basinSel.value);
+    const val = basinSel.value;
+
+    // "+ New basin" chosen — lock client + site, unlock basin for entry
+    if (val === '__new__') {
+      const siteName = siteSel.value;
+      document.getElementById('client').value       = selectedClient;
+      document.getElementById('site').value         = siteName;
+      ['client','site','site_address'].forEach(f => {
+        const el = document.getElementById(f);
+        if (el) { el.readOnly = true; el.classList.add('field-locked'); }
+      });
+      const basinEl = document.getElementById('basin');
+      if (basinEl) { basinEl.readOnly = false; basinEl.classList.remove('field-locked'); basinEl.value = ''; basinEl.focus(); }
+      currentSiteId = null;
+      updateSaveBtn();
+      const btn = document.getElementById('saveSiteBtn');
+      if (btn) btn.hidden = false;
+      return;
+    }
+
+    const record = sites.find(s => s.id === val);
     if (record) applySite(record);
   };
 
