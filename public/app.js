@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.0.8';
+const APP_VERSION = 'v1.0.9';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -954,7 +954,8 @@ function lockSiteFields() {
   const span = document.getElementById('saveSiteBtnText');
   if (span) span.textContent = 'Update this site';
   const btn = document.getElementById('saveSiteBtn');
-  if (btn) btn.hidden = false;
+  // Only show Update button if a site is actually loaded
+  if (btn) btn.hidden = !currentSiteId;
 }
 
 function unlockSiteFields() {

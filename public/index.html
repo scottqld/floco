@@ -71,7 +71,7 @@
       <div class="header-title">
         <span class="header-main">FLOCO</span>
         <span class="header-sub">Permit to Discharge · FRM013</span>
-        <span class="header-version" id="appVersion">v1.0.8</span>
+        <span class="header-version" id="appVersion">v1.0.9</span>
       </div>
       <div class="header-actions">
         <button type="button" id="siteBtn" class="log-btn" title="Manage sites">
@@ -133,26 +133,26 @@
 
       <div class="field-group">
         <label class="field-label required" for="client">Client</label>
-        <input type="text" id="client" name="client" placeholder="Client / company name" required autocomplete="organization">
+        <input type="text" id="client" name="client" placeholder="Client / company name" required autocomplete="organization" readonly class="field-locked">
       </div>
 
       <div class="field-group">
         <label class="field-label required" for="site">Site</label>
-        <input type="text" id="site" name="site" placeholder="Site name" required autocomplete="off">
+        <input type="text" id="site" name="site" placeholder="Site name" required autocomplete="off" readonly class="field-locked">
       </div>
 
       <div class="field-group">
         <label class="field-label" for="site_address">Site Address</label>
-        <input type="text" id="site_address" name="site_address" placeholder="Street address" autocomplete="street-address">
+        <input type="text" id="site_address" name="site_address" placeholder="Street address" autocomplete="street-address" readonly class="field-locked">
       </div>
 
       <div class="field-group">
         <label class="field-label" for="basin">Basin</label>
-        <input type="text" id="basin" name="basin" placeholder="Basin name / ID" autocomplete="off">
+        <input type="text" id="basin" name="basin" placeholder="Basin name / ID" autocomplete="off" readonly class="field-locked">
       </div>
 
       <div class="save-site-row">
-        <button type="button" id="saveSiteBtn" class="btn btn-secondary btn-sm">
+        <button type="button" id="saveSiteBtn" class="btn btn-secondary btn-sm" hidden>
           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           <span id="saveSiteBtnText">Save this site</span>
         </button>
