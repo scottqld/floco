@@ -19,10 +19,6 @@ const FORM_VIEWS = { ptd: 'formPtd', install: 'formInstall', maint: 'formMaint' 
 function switchForm(type) {
   if (type === activeForm) return;
 
-  const hasData = ['issued_by_name','issued_to_name','initial_test_ph','initial_test_ntu']
-    .some(id => document.getElementById(id)?.value.trim());
-  if (hasData && !confirm('Switch forms? Form data will be cleared (site details are kept).')) return;
-
   resetFormBody();
 
   activeForm = type;
