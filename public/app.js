@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.2.2';
+const APP_VERSION = 'v1.2.3';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -127,75 +127,25 @@ function apiFetch(path, options = {}) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 1. EXIF ROTATION FIX
+// 1. IMAGE COMPRESSION
 // ═══════════════════════════════════════════════════════════════════════════
 
-function getExifOrientation(file) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const view = new DataView(e.target.result);
-      if (view.getUint16(0, false) !== 0xFFD8) return resolve(1); // not a JPEG
-      let offset = 2;
-      while (offset < view.byteLength) {
-        const marker = view.getUint16(offset, false);
-        offset += 2;
-        if (marker === 0xFFE1) {
-          if (view.getUint32(offset + 2, false) !== 0x45786966) return resolve(1);
-          const little = view.getUint16(offset + 8, false) === 0x4949;
-          const ifdOffset = offset + 8 + view.getUint32(offset + 12, little);
-          const tags = view.getUint16(ifdOffset, little);
-          for (let i = 0; i < tags; i++) {
-            if (view.getUint16(ifdOffset + 2 + i * 12, little) === 0x0112) {
-              return resolve(view.getUint16(ifdOffset + 2 + i * 12 + 8, little));
-            }
-          }
-          return resolve(1);
-        }
-        if ((marker & 0xFF00) !== 0xFF00) break;
-        offset += view.getUint16(offset, false);
-      }
-      resolve(1);
-    };
-    reader.readAsArrayBuffer(file.slice(0, 64 * 1024));
-  });
-}
-
 async function compressImage(file, maxPx, quality) {
-  const orientation = await getExifOrientation(file);
-  const swapped = orientation >= 5; // orientations 5-8 rotate 90°, swapping w/h
-
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        let w = img.width, h = img.height;
-        if (w > maxPx || h > maxPx) {
-          if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
-          else       { w = Math.round(w * maxPx / h); h = maxPx; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width  = swapped ? h : w;
-        canvas.height = swapped ? w : h;
-        const ctx = canvas.getContext('2d');
-        // Apply EXIF transform before drawing
-        switch (orientation) {
-          case 2: ctx.transform(-1, 0, 0,  1, w, 0); break;
-          case 3: ctx.transform(-1, 0, 0, -1, w, h); break;
-          case 4: ctx.transform( 1, 0, 0, -1, 0, h); break;
-          case 5: ctx.transform( 0, 1, 1,  0, 0, 0); break;
-          case 6: ctx.transform( 0, 1,-1,  0, h, 0); break;
-          case 7: ctx.transform( 0,-1,-1,  0, h, w); break;
-          case 8: ctx.transform( 0,-1, 1,  0, 0, w); break;
-        }
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
+  // createImageBitmap respects EXIF orientation natively — no manual rotation needed
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(
+    () => createImageBitmap(file)
+  );
+  let w = bitmap.width, h = bitmap.height;
+  if (w > maxPx || h > maxPx) {
+    if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+    else       { w = Math.round(w * maxPx / h); h = maxPx; }
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+  bitmap.close();
+  return canvas.toDataURL('image/jpeg', quality);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
