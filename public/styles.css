@@ -197,6 +197,9 @@ form { padding: 12px 12px 0; max-width: 680px; margin: 0 auto; }
 .field-label.required::after {
   content: ' *';
   color: var(--danger);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 /* Permit body locked until site is confirmed */
@@ -944,10 +947,27 @@ textarea { resize: vertical; min-height: 72px; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Validation states ── */
+/* ── Required field states ── */
+
+/* Empty required input — amber left accent */
+input:required:placeholder-shown {
+  border-left: 3px solid #e08c3a;
+  padding-left: 10px;
+}
+
+/* Filled + valid — brand accent */
+input:required:not(:placeholder-shown):valid {
+  border-left: 3px solid var(--brand);
+  padding-left: 10px;
+}
+
+/* Invalid after interaction — full red border */
 input:invalid:not(:placeholder-shown),
 textarea:invalid:not(:placeholder-shown) {
   border-color: var(--danger);
+  border-left-width: 3px;
+  padding-left: 10px;
+  background: #fff8f7;
 }
 
 /* ── Responsive ── */
