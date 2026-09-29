@@ -24,11 +24,14 @@ function switchForm(type) {
     .some(id => document.getElementById(id)?.value.trim());
   if (hasData && !confirm('Switch forms? Form data will be cleared (site details are kept).')) return;
 
-  // Preserve site state across tab switch
-  const savedSiteId = currentSiteId;
+  // Preserve site + picker state across tab switch
+  const savedSiteId     = currentSiteId;
   const savedSiteValues = Object.fromEntries(
     SITE_FIELDS.map(f => [f, document.getElementById(f)?.value || ''])
   );
+  const savedPickClient = document.getElementById('pickClient')?.value || '';
+  const savedPickSite   = document.getElementById('pickSite')?.value   || '';
+  const savedPickBasin  = document.getElementById('pickBasin')?.value  || '';
 
   resetForm();
 
@@ -41,6 +44,7 @@ function switchForm(type) {
     currentSiteId = savedSiteId;
     lockSiteFields();
     unlockPermitBody();
+    if (_restorePickerState) _restorePickerState(savedPickClient, savedPickSite, savedPickBasin);
   }
 
   activeForm = type;
@@ -822,8 +826,9 @@ updateOfflineBanner(); // show banner immediately if starting offline
 const SITE_FIELDS = ['client','site','site_address','basin'];
 
 let allSites = [];
-let _confirmClient = null; // exposed by buildCascade for re-issue
-let currentSiteId  = null; // id of the site loaded via picker, null if none
+let _confirmClient    = null; // exposed by buildCascade
+let _restorePickerState = null; // exposed by buildCascade
+let currentSiteId     = null;
 
 async function initClients() {
   try {
@@ -896,6 +901,33 @@ function buildCascade(sites) {
   }
 
   _confirmClient = confirmClient; // expose for re-issue
+
+  // Restore picker display without triggering side-effects (used on tab switch)
+  _restorePickerState = function(clientVal, siteVal, basinId) {
+    if (!clientVal) return;
+    selectedClient = clientVal;
+    clientInput.value = clientVal;
+    clearBtn.hidden = false;
+    populateSites(clientVal);
+    if (siteVal) {
+      siteSel.value = siteVal;
+      // Populate basin dropdown for the saved site
+      const matches = sites.filter(s => s.client === clientVal && s.site === siteVal);
+      basinSel.innerHTML = '<option value="">— Select basin —</option>';
+      matches.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b.id; opt.textContent = basinLabel(b);
+        basinSel.appendChild(opt);
+      });
+      if (matches.length) {
+        const newOpt = document.createElement('option');
+        newOpt.value = '__new__'; newOpt.textContent = '+ New basin';
+        basinSel.appendChild(newOpt);
+        basinSel.disabled = false;
+        if (basinId) basinSel.value = basinId;
+      }
+    }
+  };
 
   const clearBtn = document.getElementById('clearPickerBtn');
   clearBtn.onclick = () => {
