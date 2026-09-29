@@ -19,33 +19,11 @@ const FORM_VIEWS = { ptd: 'formPtd', install: 'formInstall', maint: 'formMaint' 
 function switchForm(type) {
   if (type === activeForm) return;
 
-  // Check for unsaved non-site data before switching
   const hasData = ['issued_by_name','issued_to_name','initial_test_ph','initial_test_ntu']
     .some(id => document.getElementById(id)?.value.trim());
   if (hasData && !confirm('Switch forms? Form data will be cleared (site details are kept).')) return;
 
-  // Preserve site + picker state across tab switch
-  const savedSiteId     = currentSiteId;
-  const savedSiteValues = Object.fromEntries(
-    SITE_FIELDS.map(f => [f, document.getElementById(f)?.value || ''])
-  );
-  const savedPickClient = document.getElementById('pickClient')?.value || '';
-  const savedPickSite   = document.getElementById('pickSite')?.value   || '';
-  const savedPickBasin  = document.getElementById('pickBasin')?.value  || '';
-
-  resetForm();
-
-  // Restore site
-  if (savedSiteId) {
-    SITE_FIELDS.forEach(f => {
-      const el = document.getElementById(f);
-      if (el) el.value = savedSiteValues[f];
-    });
-    currentSiteId = savedSiteId;
-    lockSiteFields();
-    unlockPermitBody();
-    if (_restorePickerState) _restorePickerState(savedPickClient, savedPickSite, savedPickBasin);
-  }
+  resetFormBody();
 
   activeForm = type;
 
@@ -658,6 +636,33 @@ function collectData() {
   data.cc_email              = document.getElementById('cc_email').value.trim();
   data.permit_reference      = document.getElementById('permitRef').textContent;
   return data;
+}
+
+// Clears permit body fields only — site section and cascade pickers are untouched.
+function resetFormBody() {
+  const siteSection = document.querySelector('.form-section');  // first section = Site Details
+  form.querySelectorAll('input, select, textarea').forEach(el => {
+    if (el.closest('.form-section') === siteSection) return; // skip site fields + pickers
+    if (el.type === 'radio' || el.type === 'checkbox') { el.checked = false; return; }
+    el.value = '';
+  });
+  issuedToUserEdited = false;
+  sigIssuer.clear();
+  Object.keys(singlePhotos).forEach(k => delete singlePhotos[k]);
+  ['initial_ph_photo','initial_ntu_photo','after_ph_photo','after_ntu_photo'].forEach(f => {
+    const el = document.getElementById(f + '_preview');
+    if (el) el.innerHTML = '';
+  });
+  extraPhotos.length = 0;
+  extraPhotoGrid.innerHTML = '';
+  ['badge_initial_ph','badge_initial_ntu','badge_after_ph','badge_after_ntu']
+    .forEach(id => { const b = document.getElementById(id); if (b) { b.textContent = ''; b.className = 'reading-badge'; } });
+  document.getElementById('draftBanner').hidden = true;
+  clearDraft();
+  setDefaults();
+  showPermitRef();
+  prefillOperatorName();
+  updateAfterTreatmentVisibility();
 }
 
 function resetForm() {
