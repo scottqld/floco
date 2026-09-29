@@ -395,16 +395,8 @@
 
     <!-- Submit -->
     <div class="submit-area">
-      <div class="field-group cc-field-group">
-        <label class="field-label" for="to_email">Send To <span class="field-hint">(required)</span></label>
-        <input type="email" id="to_email" name="to_email" placeholder="Recipient email address…" autocomplete="email" required>
-      </div>
-      <div class="field-group cc-field-group">
-        <label class="field-label" for="cc_email">CC Email <span class="field-hint">(optional)</span></label>
-        <input type="email" id="cc_email" name="cc_email" placeholder="Send a copy to this address…" autocomplete="email">
-      </div>
-      <button type="submit" id="submitBtn" class="btn btn-primary btn-large">Submit Permit</button>
-      <p class="submit-hint">Generates a PDF and emails it to the permit recipient.</p>
+      <button type="submit" id="submitBtn" class="btn btn-primary btn-large">Generate &amp; Share PDF</button>
+      <p class="submit-hint">Generates a PDF and opens your share sheet to send or save it.</p>
     </div>
 
     </div><!-- /formPtd -->
@@ -472,9 +464,10 @@
 
   <div id="loadingOverlay" class="loading-overlay" hidden>
     <div class="loading-spinner"></div>
-    <p>Generating &amp; sending permit…</p>
+    <p>Generating PDF…</p>
   </div>
 
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
 </body>

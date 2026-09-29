@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.2.3';
+const APP_VERSION = 'v1.3.0';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -506,6 +506,171 @@ function addExtraThumb(dataUrl, index) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// PDF GENERATION (browser-side, pdf-lib from CDN)
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function generatePermitPDF(formData) {
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+
+  const A4_W = 595.28, A4_H = 841.89, M = 50;
+  const CW = A4_W - 2 * M, PAD = 5;
+  const C_BLACK = rgb(0, 0, 0);
+  const C_GREY  = rgb(0.851, 0.851, 0.851);
+
+  function b64ToBytes(b64) {
+    const bin = atob(b64); const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return arr;
+  }
+  function parsePic(dataUrl) {
+    if (!dataUrl || !dataUrl.includes('base64,')) return null;
+    const m = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+    return m ? { type: m[1], data: b64ToBytes(m[2]) } : null;
+  }
+  function fmtDate(dateStr, timeStr) {
+    if (!dateStr) return '';
+    const [y, mo, d] = dateStr.split('-');
+    let r = `${d}/${mo}/${y}`;
+    if (timeStr) { const [hh, mm] = timeStr.split(':'); const h = parseInt(hh, 10); r += ` ${h % 12 || 12}:${mm} ${h >= 12 ? 'pm' : 'am'}`; }
+    return r;
+  }
+  function addDays(dateStr, days) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr); d.setDate(d.getDate() + days);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function wrapText(text, font, size, maxWidth) {
+    const lines = [];
+    for (const para of String(text ?? '').split('\n')) {
+      if (!para) { lines.push(''); continue; }
+      const words = para.split(' '); let cur = '';
+      for (const w of words) {
+        const test = cur ? cur + ' ' + w : w;
+        if (font.widthOfTextAtSize(test, size) > maxWidth && cur) { lines.push(cur); cur = w; }
+        else cur = test;
+      }
+      if (cur) lines.push(cur);
+    }
+    return lines;
+  }
+
+  const pdfDoc = await PDFDocument.create();
+  const fReg  = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const fItal = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+
+  const validFrom = fmtDate(formData.valid_from_date, formData.valid_from_time);
+  const validTo   = fmtDate(formData.valid_to_date,   formData.valid_to_time);
+
+  function addPage() { return pdfDoc.addPage([A4_W, A4_H]); }
+  function pdfY(topY, h = 0) { return A4_H - topY - h; }
+  function drawRect(page, x, topY, w, h, { fill } = {}) {
+    page.drawRectangle({ x, y: pdfY(topY, h), width: w, height: h,
+      color: fill || undefined, borderColor: C_BLACK, borderWidth: 0.5 });
+  }
+  function drawText(page, text, x, topY, { font = fReg, size = 9, maxWidth } = {}) {
+    page.drawText(String(text ?? ''), { x, y: pdfY(topY, size) + 1, font, size, color: C_BLACK, maxWidth });
+  }
+  function cell(page, x, topY, w, h, text, { bg, bold, size = 9 } = {}) {
+    drawRect(page, x, topY, w, h, { fill: bg });
+    if (text != null) drawText(page, text, x + PAD, topY + PAD, { font: bold ? fBold : fReg, size, maxWidth: w - PAD * 2 });
+  }
+  async function embedImg(pic) {
+    try { return pic.type === 'png' ? await pdfDoc.embedPng(pic.data) : await pdfDoc.embedJpg(pic.data); }
+    catch { return null; }
+  }
+
+  let page = addPage(), y = M;
+
+  // Logo
+  try {
+    const res = await fetch('/floco_logo.png');
+    const buf = new Uint8Array(await res.arrayBuffer());
+    const img = await pdfDoc.embedPng(buf);
+    const dims = img.scaleToFit(130, 80);
+    page.drawImage(img, { x: M + (CW - dims.width) / 2, y: pdfY(y, dims.height), width: dims.width, height: dims.height });
+    y += dims.height + 10;
+  } catch { y += 90; }
+
+  // Title
+  const titleText = 'Permit to Discharge';
+  drawText(page, titleText, M + (CW - fBold.widthOfTextAtSize(titleText, 20)) / 2, y, { font: fBold, size: 20 });
+  y += 30;
+
+  // Site details
+  const D_LBL = 130;
+  [['Client', formData.client], ['Site', formData.site], ['Site Address', formData.site_address], ['Basin', formData.basin]]
+    .forEach(([lbl, val]) => { drawText(page, lbl + ':', M, y, { font: fBold, size: 10 }); drawText(page, val || '', M + D_LBL, y, { size: 10, maxWidth: CW - D_LBL }); y += 15; });
+  y += 6;
+
+  [['Discharge To', formData.discharge_to], ['Valid From', validFrom], ['Valid To', validTo]]
+    .forEach(([lbl, val]) => { drawText(page, lbl + ':', M, y, { font: fBold, size: 10 }); drawText(page, val || '', M + D_LBL, y, { size: 10, maxWidth: CW - D_LBL }); y += 15; });
+  y += 4;
+
+  const noteText = `(Note: Discharge permit only valid for 5 days, or until rain event prior to ${fmtDate(addDays(formData.valid_from_date, 5))}.)`;
+  wrapText(noteText, fItal, 9, CW).forEach(line => { drawText(page, line, M, y, { font: fItal, size: 9 }); y += 12; });
+  y += 6;
+
+  // Water quality table
+  const WQ = [120, 75, 75, CW - 120 - 75 - 75];
+  const PHOTO_W = WQ[3] - PAD * 2, PHOTO_H = Math.round(PHOTO_W * 3 / 4);
+  const DATA_ROW = PHOTO_H + PAD * 2, HDR_ROW = 20;
+
+  let cx = M;
+  ['Reading', 'pH', 'NTU', ''].forEach((h, i) => { cell(page, cx, y, WQ[i], HDR_ROW, h, { bg: C_GREY, bold: true }); cx += WQ[i]; });
+  y += HDR_ROW;
+
+  for (const [lbl, ph, ntu, photo] of [
+    ['Initial Test',    formData.initial_test_ph,    formData.initial_test_ntu,    formData.initial_ph_photo],
+    ['After Treatment', formData.after_treatment_ph, formData.after_treatment_ntu, formData.after_ph_photo],
+  ]) {
+    cx = M;
+    cell(page, cx, y, WQ[0], DATA_ROW, lbl); cx += WQ[0];
+    cell(page, cx, y, WQ[1], DATA_ROW, ph  || ''); cx += WQ[1];
+    cell(page, cx, y, WQ[2], DATA_ROW, ntu || ''); cx += WQ[2];
+    cell(page, cx, y, WQ[3], DATA_ROW, null);
+    const pic = parsePic(photo);
+    if (pic) { const img = await embedImg(pic); if (img) { const d = img.scaleToFit(PHOTO_W, PHOTO_H); page.drawImage(img, { x: cx + PAD, y: pdfY(y + PAD, d.height), width: d.width, height: d.height }); } }
+    cx += WQ[3];
+    y += DATA_ROW;
+  }
+  y += 10;
+
+  // Issued By / To
+  if (y + 160 > A4_H - M) { page = addPage(); y = M; }
+  const ISS_LBL = 120, ISS_VAL = CW - ISS_LBL, ISS_H = 70;
+
+  cell(page, M, y, ISS_LBL, ISS_H, 'Issued By', { bg: C_GREY, bold: true });
+  cell(page, M + ISS_LBL, y, ISS_VAL, ISS_H, formData.issued_by_name || '');
+  const sigByPic = parsePic(formData.issued_by_signature);
+  if (sigByPic) { const img = await embedImg(sigByPic); if (img) { const d = img.scaleToFit(ISS_VAL - PAD*2, 44); page.drawImage(img, { x: M+ISS_LBL+PAD, y: pdfY(y+18, d.height), width: d.width, height: d.height }); } }
+  y += ISS_H;
+
+  cell(page, M, y, ISS_LBL, ISS_H, 'Issued To', { bg: C_GREY, bold: true });
+  cell(page, M + ISS_LBL, y, ISS_VAL, ISS_H, formData.issued_to_name || '');
+  y += ISS_H + 10;
+
+  // Special instructions
+  const siText = formData.special_instructions || '';
+  const siLines = siText ? wrapText(siText, fReg, 9, CW - PAD*2) : [];
+  const LINE_H = 11, siH = Math.max(40, siLines.length * LINE_H + 24);
+  if (y + siH > A4_H - M) { page = addPage(); y = M; }
+  drawRect(page, M, y, CW, siH);
+  drawText(page, 'Special Instructions:', M + PAD, y + PAD, { font: fBold, size: 9 });
+  siLines.forEach((line, i) => drawText(page, line, M + PAD, y + PAD + 13 + i * LINE_H, { size: 9 }));
+
+  // Extra photos (one per page)
+  for (const photo of (formData.additional_photos || []).filter(p => p?.includes('base64,'))) {
+    const pic = parsePic(photo); if (!pic) continue;
+    const img = await embedImg(pic); if (!img) continue;
+    const ep = addPage(), d = img.scaleToFit(CW, A4_H - M*2);
+    ep.drawImage(img, { x: M + (CW - d.width)/2, y: M + (A4_H - M*2 - d.height)/2, width: d.width, height: d.height });
+  }
+
+  return pdfDoc.save();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // FORM SUBMISSION
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -529,40 +694,45 @@ form.addEventListener('submit', async e => {
     return;
   }
 
-  // Offline — queue for later
-  if (!navigator.onLine) {
-    const q = getQueue();
-    q.push(collectData());
-    saveQueue(q);
-    advancePermitRef();
-    saveOperatorName();
-    clearDraft();
-    showToast('No connection — permit saved and will send when back online.', '');
-    setTimeout(() => { if (confirm('Permit queued. Reset for a new permit?')) { resetForm(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, 1500);
-    return;
-  }
-
   submitBtn.disabled = true;
   loadingOverlay.hidden = false;
 
   try {
-    const res  = await apiFetch('/api/submit', {
-      method: 'POST',
-      body: JSON.stringify(collectData()),
-    });
-    const json = await res.json();
+    const data = collectData();
+    const pdfBytes = await generatePermitPDF(data);
+    const ref = data.permit_reference || '';
+    const filename = `Permit-to-Discharge-${ref || new Date().toISOString().slice(0,10)}.pdf`;
+    const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
 
-    if (json.success) {
-      advancePermitRef();
-      saveOperatorName();
-      clearDraft();
-      showToast('Permit submitted and emailed!', 'success');
-      setTimeout(() => { if (confirm('Permit sent. Reset for a new permit?')) { resetForm(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, 1500);
+    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+      await navigator.share({ files: [pdfFile], title: `Permit to Discharge${ref ? ' – ' + ref : ''}` });
     } else {
-      showToast('Error: ' + (json.message || 'Submission failed'), 'error');
+      // Fallback: trigger download
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     }
-  } catch {
-    showToast('Network error – check your connection.', 'error');
+
+    advancePermitRef();
+    saveOperatorName();
+    clearDraft();
+
+    // Log to worker (best-effort)
+    if (navigator.onLine && API) {
+      apiFetch('/api/submit', { method: 'POST', body: JSON.stringify(data) }).catch(() => {});
+    }
+
+    showToast('Permit PDF generated!', 'success');
+    setTimeout(() => {
+      if (confirm('Permit saved. Reset for a new permit?')) { resetForm(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    }, 1500);
+
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      showToast('Error generating PDF: ' + err.message, 'error');
+    }
   } finally {
     submitBtn.disabled = false;
     loadingOverlay.hidden = true;
@@ -578,9 +748,8 @@ function collectData() {
   data.initial_ntu_photo = singlePhotos.initial_ntu_photo ?? null;
   data.after_ph_photo    = singlePhotos.after_ph_photo    ?? null;
   data.after_ntu_photo   = singlePhotos.after_ntu_photo   ?? null;
-  data.additional_photos     = [...extraPhotos];
-  data.cc_email              = document.getElementById('cc_email').value.trim();
-  data.permit_reference      = document.getElementById('permitRef').textContent;
+  data.additional_photos = [...extraPhotos];
+  data.permit_reference  = document.getElementById('permitRef').textContent;
   return data;
 }
 
@@ -709,39 +878,10 @@ document.getElementById('issued_by_name').addEventListener('change', () => {
   if (!issuedToUserEdited) document.getElementById('issued_to_name').value = '';
 });
 
-// ── Offline queue ──────────────────────────────────────────────────────────
-const QUEUE_KEY = 'permit_queue';
-
-function getQueue() {
-  try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch { return []; }
-}
-
-function saveQueue(q) {
-  try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch { /* quota */ }
-}
-
-async function processQueue() {
-  const queue = getQueue();
-  if (!queue.length) return;
-  showToast(`Sending ${queue.length} queued permit(s)…`);
-  const remaining = [];
-  for (const item of queue) {
-    try {
-      const res  = await apiFetch('/api/submit', {
-        method: 'POST',
-        body: JSON.stringify(item),
-      });
-      const json = await res.json();
-      if (!json.success) remaining.push(item);
-    } catch {
-      remaining.push(item);
-    }
-  }
-  saveQueue(remaining);
-  const sent = queue.length - remaining.length;
-  if (sent > 0) showToast(`${sent} queued permit(s) sent!`, 'success');
-  if (remaining.length > 0) showToast(`${remaining.length} permit(s) still queued — check connection.`, 'error');
-}
+// ── Offline queue (legacy — no-op, kept to avoid errors from old localStorage keys) ──
+function getQueue() { return []; }
+function saveQueue() {}
+async function processQueue() {}
 
 // ── Offline indicator ──────────────────────────────────────────────────────
 
