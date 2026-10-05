@@ -401,14 +401,135 @@
 
     </div><!-- /formPtd -->
 
-    <!-- Installation Checklist placeholder -->
+    <!-- Installation Checklist -->
     <div id="formInstall" class="form-view" hidden>
-      <div class="form-placeholder">
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        <p>Dosing System Installation Checklist</p>
-        <small>Coming soon</small>
+
+    <!-- Section: Installation Details -->
+    <section class="form-section">
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Installation Details
+      </h2>
+
+      <div class="field-group">
+        <label class="field-label required" for="inst_dosing_type">Dosing System Type</label>
+        <select id="inst_dosing_type" name="inst_dosing_type" class="inst-select">
+          <option value="">— Select system type —</option>
+          <option value="Ezy-floc rain">Ezy-floc rain</option>
+          <option value="Ezy-floc floc">Ezy-floc floc</option>
+          <option value="Flocca">Flocca</option>
+          <option value="Flocbox">Flocbox</option>
+        </select>
       </div>
+
+      <div class="field-group">
+        <label class="field-label required">Has a jar test been undertaken?</label>
+        <div class="radio-group">
+          <label class="radio-option"><input type="radio" name="inst_jar_test" value="Yes"><span>Yes</span></label>
+          <label class="radio-option"><input type="radio" name="inst_jar_test" value="No"><span>No</span></label>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label required" for="inst_dose_rate">Dose Rate <span class="field-hint inline-hint">(mL/min or as specified)</span></label>
+        <input type="number" id="inst_dose_rate" name="inst_dose_rate" placeholder="e.g. 25" min="0" step="any" required>
+      </div>
+    </section>
+
+    <!-- Section: Installation Checklist -->
+    <section class="form-section">
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Installation Checklist
+      </h2>
+
+      <div class="checklist">
+        <label class="check-item">
+          <input type="checkbox" name="chk_solar_connected">
+          <span class="check-box"></span>
+          <span class="check-label">Solar panel connected</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" name="chk_solar_charging">
+          <span class="check-box"></span>
+          <span class="check-label">Solar panel charging</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" name="chk_hoses_connected">
+          <span class="check-box"></span>
+          <span class="check-label">Hoses connected and no leaks</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" name="chk_ibc_lid">
+          <span class="check-box"></span>
+          <span class="check-label">IBC lid open</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" name="chk_inflow_adequate">
+          <span class="check-box"></span>
+          <span class="check-label">Inflow channel / pipe adequate</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" name="chk_dosing_line">
+          <span class="check-box"></span>
+          <span class="check-label">Dosing line secured</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" name="chk_triggered_tested">
+          <span class="check-box"></span>
+          <span class="check-label">System triggered and tested for correct dose</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Section: Site Photos -->
+    <section class="form-section">
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Site Photos <span class="section-hint">(up to 4)</span>
+      </h2>
+
+      <button type="button" id="instAddPhotoBtn" class="btn btn-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Add Photo
+      </button>
+      <input type="file" id="instPhotoInput" accept="image/*" capture="environment" multiple style="display:none">
+      <div id="instPhotoGrid" class="photo-grid"></div>
+    </section>
+
+    <!-- Section: Notes & Sign-off -->
+    <section class="form-section">
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Notes &amp; Sign-off
+      </h2>
+
+      <div class="field-group">
+        <label class="field-label" for="inst_notes">Additional Notes / Recommendations</label>
+        <textarea id="inst_notes" name="inst_notes" placeholder="Enter any additional notes or recommendations…" rows="4"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label required" for="inst_completed_by">Completed By</label>
+        <input type="text" id="inst_completed_by" name="inst_completed_by" placeholder="Full name" required autocomplete="name">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Signature</label>
+        <div class="sig-wrap">
+          <canvas id="sigInstall" class="sig-canvas"></canvas>
+          <button type="button" class="sig-clear-btn" data-target="sigInstall">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Submit -->
+    <div class="submit-area">
+      <button type="submit" id="installSubmitBtn" class="btn btn-primary btn-large">Generate &amp; Share PDF</button>
+      <p class="submit-hint">Generates a PDF and opens your share sheet to send or save it.</p>
     </div>
+
+    </div><!-- /formInstall -->
 
     <!-- Maintenance Checklist placeholder -->
     <div id="formMaint" class="form-view" hidden>

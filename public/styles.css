@@ -947,6 +947,66 @@ textarea { resize: vertical; min-height: 72px; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Installation checklist ── */
+.checklist {
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  min-height: 48px;
+  transition: background .1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.check-item:last-child { border-bottom: none; }
+.check-item input[type="checkbox"] { display: none; }
+.check-box {
+  width: 22px; height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 5px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+  font-size: .85rem;
+  font-weight: 700;
+  color: transparent;
+}
+.check-item:has(input:checked) { background: #f0faf4; }
+.check-item:has(input:checked) .check-box { background: #27ae60; border-color: #27ae60; color: #fff; }
+.check-item:has(input:checked) .check-box::after { content: '\2713'; }
+.check-label { font-size: .95rem; flex: 1; line-height: 1.35; }
+
+/* ── Inst select ── */
+.inst-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--text);
+  background: #fff;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  transition: border-color .15s;
+}
+.inst-select:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(41,171,226,.18); }
+
+/* Section hint (e.g. "up to 4") */
+.section-hint { font-size: .78rem; font-weight: 400; color: var(--muted); margin-left: 4px; }
+
 /* ── Required field states ── */
 
 /* Empty required input — amber left accent */

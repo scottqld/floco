@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.3.2';
+const APP_VERSION = 'v1.4.0';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -31,6 +31,8 @@ function switchForm(type) {
     const el = document.getElementById(id);
     if (el) el.hidden = (key !== type);
   });
+
+  showPermitRef();
 }
 
 document.querySelectorAll('.form-tab').forEach(btn => {
@@ -403,16 +405,17 @@ class SignaturePad {
 }
 
 // ── Init signature pads ────────────────────────────────────────────────────
-const sigIssuer = new SignaturePad(document.getElementById('sigIssuer'));
+const sigIssuer  = new SignaturePad(document.getElementById('sigIssuer'));
+const sigInstall = new SignaturePad(document.getElementById('sigInstall'));
 
 document.querySelectorAll('.sig-clear-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    if (btn.dataset.target === 'sigIssuer')   sigIssuer.clear();
-    if (btn.dataset.target === 'sigIssuedTo') sigIssuedTo.clear();
+    if (btn.dataset.target === 'sigIssuer')  sigIssuer.clear();
+    if (btn.dataset.target === 'sigInstall') sigInstall.clear();
   });
 });
 
-window.addEventListener('load', () => { sigIssuer._resize(); });
+window.addEventListener('load', () => { sigIssuer._resize(); sigInstall._resize(); });
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PHOTO CAPTURE
@@ -503,6 +506,50 @@ function addExtraThumb(dataUrl, index) {
   wrap.appendChild(img);
   wrap.appendChild(removeBtn);
   extraPhotoGrid.appendChild(wrap);
+}
+
+// ── Install photos (max 4) ─────────────────────────────────────────────────
+const installPhotos   = [];
+const instPhotoInput  = document.getElementById('instPhotoInput');
+const instPhotoGrid   = document.getElementById('instPhotoGrid');
+
+function updateInstAddBtn() {
+  const btn = document.getElementById('instAddPhotoBtn');
+  if (btn) btn.disabled = installPhotos.length >= 4;
+}
+
+document.getElementById('instAddPhotoBtn').addEventListener('click', () => {
+  if (installPhotos.length >= 4) { showToast('Maximum 4 photos allowed.', 'error'); return; }
+  instPhotoInput.value = '';
+  instPhotoInput.click();
+});
+
+instPhotoInput.addEventListener('change', async () => {
+  const remaining = 4 - installPhotos.length;
+  for (const file of Array.from(instPhotoInput.files).slice(0, remaining)) {
+    const dataUrl = await compressImage(file, 1280, 0.85);
+    installPhotos.push(dataUrl);
+    addInstPhotoThumb(dataUrl, installPhotos.length - 1);
+  }
+  updateInstAddBtn();
+});
+
+function addInstPhotoThumb(dataUrl, index) {
+  const wrap = document.createElement('div');
+  wrap.className = 'photo-thumb';
+  wrap.dataset.index = index;
+  const img = document.createElement('img');
+  img.src = dataUrl; img.alt = `Photo ${index + 1}`;
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button'; removeBtn.className = 'photo-remove'; removeBtn.textContent = '×';
+  removeBtn.addEventListener('click', () => {
+    installPhotos.splice(parseInt(wrap.dataset.index, 10), 1);
+    instPhotoGrid.innerHTML = '';
+    installPhotos.forEach((p, i) => addInstPhotoThumb(p, i));
+    updateInstAddBtn();
+  });
+  wrap.appendChild(img); wrap.appendChild(removeBtn);
+  instPhotoGrid.appendChild(wrap);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -670,13 +717,167 @@ async function generatePermitPDF(formData) {
   return pdfDoc.save();
 }
 
+// ── Install data collector ─────────────────────────────────────────────────
+function collectInstallData() {
+  const fd = new FormData(form);
+  const data = {};
+  for (const [k, v] of fd.entries()) data[k] = v;
+  // Checkboxes are absent from FormData when unchecked — record all explicitly
+  ['chk_solar_connected','chk_solar_charging','chk_hoses_connected','chk_ibc_lid',
+   'chk_inflow_adequate','chk_dosing_line','chk_triggered_tested'].forEach(name => {
+    data[name] = form.elements[name]?.checked ? 'yes' : 'no';
+  });
+  data.inst_signature   = sigInstall.toDataURL();
+  data.inst_photos      = [...installPhotos];
+  data.permit_reference = document.getElementById('permitRef').textContent;
+  return data;
+}
+
+// ── Install PDF generator ──────────────────────────────────────────────────
+async function generateInstallPDF(d) {
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+
+  const A4_W = 595.28, A4_H = 841.89, M = 50;
+  const CW = A4_W - 2 * M, PAD = 5;
+  const C_BLACK = rgb(0,0,0), C_GREY = rgb(0.851,0.851,0.851), C_GREEN = rgb(0.153,0.682,0.376), C_RED = rgb(0.831,0.227,0.227);
+
+  function b64ToBytes(b64) { const bin=atob(b64); const a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i); return a; }
+  function parsePic(u) { if(!u||!u.includes('base64,'))return null; const m=u.match(/^data:image\/(\w+);base64,(.+)$/); return m?{type:m[1],data:b64ToBytes(m[2])}:null; }
+
+  const pdfDoc = await PDFDocument.create();
+  const fReg  = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  function addPage() { return pdfDoc.addPage([A4_W, A4_H]); }
+  function pdfY(topY, h=0) { return A4_H - topY - h; }
+  function drawRect(pg, x, topY, w, h, {fill}={}) { pg.drawRectangle({x, y:pdfY(topY,h), width:w, height:h, color:fill||undefined, borderColor:C_BLACK, borderWidth:0.5}); }
+  function drawText(pg, text, x, topY, {font=fReg, size=9, maxWidth}={}) { pg.drawText(String(text??''), {x, y:pdfY(topY,size)+1, font, size, color:C_BLACK, maxWidth}); }
+  function cell(pg, x, topY, w, h, text, {bg, bold, size=9}={}) {
+    drawRect(pg, x, topY, w, h, {fill:bg});
+    if(text!=null) drawText(pg, text, x+PAD, topY+PAD, {font:bold?fBold:fReg, size, maxWidth:w-PAD*2});
+  }
+  async function embedImg(pic) { try { return pic.type==='png' ? await pdfDoc.embedPng(pic.data) : await pdfDoc.embedJpg(pic.data); } catch{return null;} }
+  function wrapText(text, font, size, maxWidth) {
+    const lines=[];
+    for(const para of String(text??'').split('\n')) {
+      if(!para){lines.push('');continue;}
+      const words=para.split(' '); let cur='';
+      for(const w of words){const t=cur?cur+' '+w:w; if(font.widthOfTextAtSize(t,size)>maxWidth&&cur){lines.push(cur);cur=w;}else cur=t;}
+      if(cur)lines.push(cur);
+    }
+    return lines;
+  }
+
+  let page = addPage(), y = M;
+
+  // Logo
+  try {
+    const res=await fetch('/floco_logo.png'); const buf=new Uint8Array(await res.arrayBuffer());
+    const img=await pdfDoc.embedPng(buf); const dims=img.scaleToFit(130,80);
+    page.drawImage(img,{x:M+(CW-dims.width)/2, y:pdfY(y,dims.height), width:dims.width, height:dims.height});
+    y+=dims.height+10;
+  } catch { y+=90; }
+
+  // Title
+  const titleText='Dosing System Installation Checklist';
+  drawText(page, titleText, M+(CW-fBold.widthOfTextAtSize(titleText,16))/2, y, {font:fBold, size:16});
+  y+=8;
+  const refText = d.permit_reference || '';
+  drawText(page, refText, M+(CW-fReg.widthOfTextAtSize(refText,9))/2, y+14, {size:9});
+  y+=30;
+
+  // Site details
+  const D_LBL=130;
+  [['Client',d.client],['Site',d.site],['Site Address',d.site_address],['Basin',d.basin]]
+    .forEach(([lbl,val])=>{drawText(page,lbl+':',M,y,{font:fBold,size:10});drawText(page,val||'',M+D_LBL,y,{size:10,maxWidth:CW-D_LBL});y+=15;});
+  y+=8;
+
+  // Installation details box
+  const DETS = [[`Dosing System Type`,d.inst_dosing_type||''],['Jar Test Undertaken',d.inst_jar_test||''],['Dose Rate',d.inst_dose_rate ? `${d.inst_dose_rate} mL/min` : '']];
+  const DH = 18, detH = DH * DETS.length + DH;
+  cell(page, M, y, CW/2, DH, 'Installation Details', {bg:C_GREY, bold:true});
+  cell(page, M+CW/2, y, CW/2, DH, 'Value', {bg:C_GREY, bold:true});
+  y+=DH;
+  DETS.forEach(([lbl,val])=>{
+    cell(page, M, y, CW/2, DH, lbl); cell(page, M+CW/2, y, CW/2, DH, val); y+=DH;
+  });
+  y+=10;
+
+  // Checklist
+  if(y+200>A4_H-M){page=addPage();y=M;}
+  const CHK_ITEMS=[
+    ['Solar panel connected',              d.chk_solar_connected],
+    ['Solar panel charging',               d.chk_solar_charging],
+    ['Hoses connected and no leaks',       d.chk_hoses_connected],
+    ['IBC lid open',                       d.chk_ibc_lid],
+    ['Inflow channel / pipe adequate',     d.chk_inflow_adequate],
+    ['Dosing line secured',                d.chk_dosing_line],
+    ['System triggered and tested for correct dose', d.chk_triggered_tested],
+  ];
+  const CH=22;
+  cell(page, M, y, CW-60, CH, 'Checklist Item', {bg:C_GREY, bold:true});
+  cell(page, M+CW-60, y, 60, CH, 'Status', {bg:C_GREY, bold:true});
+  y+=CH;
+  CHK_ITEMS.forEach(([lbl,val])=>{
+    const checked=val==='yes';
+    cell(page, M, y, CW-60, CH, lbl);
+    drawRect(page, M+CW-60, y, 60, CH, {fill: checked?C_GREEN:C_RED});
+    drawText(page, checked?'Yes':'No', M+CW-60+PAD, y+PAD, {font:fBold, size:9, maxWidth:60-PAD*2});
+    y+=CH;
+  });
+  y+=10;
+
+  // Notes
+  if(y+60>A4_H-M){page=addPage();y=M;}
+  const notesText=d.inst_notes||'';
+  const noteLines=notesText?wrapText(notesText,fReg,9,CW-PAD*2):[];
+  const LINE_H=11, notesH=Math.max(40, noteLines.length*LINE_H+24);
+  if(y+notesH>A4_H-M){page=addPage();y=M;}
+  drawRect(page, M, y, CW, notesH);
+  drawText(page, 'Additional Notes / Recommendations:', M+PAD, y+PAD, {font:fBold, size:9});
+  noteLines.forEach((line,i)=>drawText(page, line, M+PAD, y+PAD+13+i*LINE_H, {size:9}));
+  y+=notesH+10;
+
+  // Completed by / signature
+  if(y+80>A4_H-M){page=addPage();y=M;}
+  const ISS_LBL=120, ISS_VAL=CW-ISS_LBL, ISS_H=70;
+  cell(page, M, y, ISS_LBL, ISS_H, 'Completed By', {bg:C_GREY, bold:true});
+  cell(page, M+ISS_LBL, y, ISS_VAL, ISS_H, d.inst_completed_by||'');
+  const sigPic=parsePic(d.inst_signature);
+  if(sigPic){const img=await embedImg(sigPic);if(img){const dims=img.scaleToFit(ISS_VAL-PAD*2,44);page.drawImage(img,{x:M+ISS_LBL+PAD,y:pdfY(y+18,dims.height),width:dims.width,height:dims.height});}}
+  y+=ISS_H+10;
+
+  // Photos
+  for(const photo of (d.inst_photos||[]).filter(p=>p?.includes('base64,'))){
+    const pic=parsePic(photo);if(!pic)continue;
+    const img=await embedImg(pic);if(!img)continue;
+    const ep=addPage(); const dims=img.scaleToFit(CW,A4_H-M*2);
+    ep.drawImage(img,{x:M+(CW-dims.width)/2, y:M+(A4_H-M*2-dims.height)/2, width:dims.width, height:dims.height});
+  }
+
+  return pdfDoc.save();
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // FORM SUBMISSION
 // ═══════════════════════════════════════════════════════════════════════════
 
-const form           = document.getElementById('permitForm');
-const submitBtn      = document.getElementById('submitBtn');
-const loadingOverlay = document.getElementById('loadingOverlay');
+const form              = document.getElementById('permitForm');
+const submitBtn         = document.getElementById('submitBtn');
+const installSubmitBtn  = document.getElementById('installSubmitBtn');
+const loadingOverlay    = document.getElementById('loadingOverlay');
+
+function getActiveSubmitBtn() {
+  return activeForm === 'install' ? installSubmitBtn : submitBtn;
+}
+
+// Validate only fields in the site section + active form view
+function checkActiveFormValidity() {
+  const siteSection = document.querySelector('.form-section');
+  const activeViewEl = document.getElementById(FORM_VIEWS[activeForm]);
+  const inScope = el => siteSection.contains(el) || (activeViewEl && activeViewEl.contains(el));
+  return [...form.querySelectorAll('[required]')].filter(inScope).every(el => el.checkValidity());
+}
 
 // Auto-save on any field change
 form.addEventListener('input',  scheduleSave);
@@ -685,30 +886,45 @@ form.addEventListener('change', scheduleSave);
 form.addEventListener('submit', async e => {
   e.preventDefault();
 
-  if (!form.querySelector('input[name="discharge_to"]:checked')) {
+  // Per-form radio validation
+  if (activeForm === 'ptd' && !form.querySelector('input[name="discharge_to"]:checked')) {
     showToast('Please select a "Discharge To" option.', 'error');
     return;
   }
-  if (!form.checkValidity()) {
+  if (activeForm === 'install' && !form.querySelector('input[name="inst_jar_test"]:checked')) {
+    showToast('Please answer the jar test question.', 'error');
+    return;
+  }
+
+  if (!checkActiveFormValidity()) {
     showToast('Please fill in all required fields.', 'error');
     return;
   }
 
-  submitBtn.disabled = true;
+  const activeBtn = getActiveSubmitBtn();
+  activeBtn.disabled = true;
   loadingOverlay.hidden = false;
 
   try {
-    const data = collectData();
-    const pdfBytes = await generatePermitPDF(data);
-    const ref = data.permit_reference || '';
-    const filename = `Permit-to-Discharge-${ref || new Date().toISOString().slice(0,10)}.pdf`;
-    const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+    let data, pdfBytes, docLabel;
+    if (activeForm === 'install') {
+      data      = collectInstallData();
+      pdfBytes  = await generateInstallPDF(data);
+      docLabel  = 'Installation-Checklist';
+    } else {
+      data      = collectData();
+      pdfBytes  = await generatePermitPDF(data);
+      docLabel  = 'Permit-to-Discharge';
+    }
+
+    const ref      = data.permit_reference || '';
+    const filename = `${docLabel}-${ref || new Date().toISOString().slice(0,10)}.pdf`;
+    const pdfBlob  = new Blob([pdfBytes], { type: 'application/pdf' });
+    const pdfFile  = new File([pdfBlob], filename, { type: 'application/pdf' });
 
     if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-      await navigator.share({ files: [pdfFile], title: `Permit to Discharge${ref ? ' – ' + ref : ''}` });
+      await navigator.share({ files: [pdfFile], title: `${docLabel.replace(/-/g,' ')}${ref ? ' – ' + ref : ''}` });
     } else {
-      // Fallback: trigger download
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
       a.href = url; a.download = filename; a.click();
@@ -716,17 +932,16 @@ form.addEventListener('submit', async e => {
     }
 
     advancePermitRef();
-    saveOperatorName();
+    if (activeForm === 'ptd') saveOperatorName();
     clearDraft();
 
-    // Log to worker (best-effort)
     if (navigator.onLine && API) {
       apiFetch('/api/submit', { method: 'POST', body: JSON.stringify(data) }).catch(() => {});
     }
 
-    showToast('Permit PDF generated!', 'success');
+    showToast('PDF generated!', 'success');
     setTimeout(() => {
-      if (confirm('Permit saved. Reset for a new permit?')) { resetForm(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      if (confirm('PDF saved. Reset for a new form?')) { resetForm(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     }, 1500);
 
   } catch (err) {
@@ -734,7 +949,7 @@ form.addEventListener('submit', async e => {
       showToast('Error generating PDF: ' + err.message, 'error');
     }
   } finally {
-    submitBtn.disabled = false;
+    activeBtn.disabled = false;
     loadingOverlay.hidden = true;
   }
 });
@@ -763,6 +978,7 @@ function resetFormBody() {
   });
   issuedToUserEdited = false;
   sigIssuer.clear();
+  sigInstall.clear();
   Object.keys(singlePhotos).forEach(k => delete singlePhotos[k]);
   ['initial_ph_photo','initial_ntu_photo','after_ph_photo','after_ntu_photo'].forEach(f => {
     const el = document.getElementById(f + '_preview');
@@ -770,6 +986,9 @@ function resetFormBody() {
   });
   extraPhotos.length = 0;
   extraPhotoGrid.innerHTML = '';
+  installPhotos.length = 0;
+  instPhotoGrid.innerHTML = '';
+  updateInstAddBtn();
   ['badge_initial_ph','badge_initial_ntu','badge_after_ph','badge_after_ntu']
     .forEach(id => { const b = document.getElementById(id); if (b) { b.textContent = ''; b.className = 'reading-badge'; } });
   document.getElementById('draftBanner').hidden = true;
@@ -787,6 +1006,7 @@ function resetForm() {
   updateSaveBtn();
   lockPermitBody();
   sigIssuer.clear();
+  sigInstall.clear();
   Object.keys(singlePhotos).forEach(k => delete singlePhotos[k]);
   ['initial_ph_photo','initial_ntu_photo','after_ph_photo','after_ntu_photo'].forEach(f => {
     const el = document.getElementById(f + '_preview');
@@ -794,6 +1014,9 @@ function resetForm() {
   });
   extraPhotos.length = 0;
   extraPhotoGrid.innerHTML = '';
+  installPhotos.length = 0;
+  instPhotoGrid.innerHTML = '';
+  updateInstAddBtn();
   ['badge_initial_ph','badge_initial_ntu','badge_after_ph','badge_after_ntu']
     .forEach(id => { const el = document.getElementById(id); if (el) { el.textContent = ''; el.className = 'reading-badge'; } });
   document.getElementById('draftBanner').hidden = true;
@@ -843,16 +1066,22 @@ function setDefaults() {
 }
 
 // ── Permit reference number ────────────────────────────────────────────────
-const PERMIT_REF_KEY = 'permit_ref_counter';
+const REF_CONFIG = {
+  ptd:     { prefix: 'PTD', key: 'permit_ref_counter' },
+  install: { prefix: 'IC',  key: 'inst_ref_counter'   },
+  maint:   { prefix: 'MC',  key: 'maint_ref_counter'  },
+};
 
 function showPermitRef() {
-  const n = parseInt(localStorage.getItem(PERMIT_REF_KEY) || '0', 10) + 1;
-  document.getElementById('permitRef').textContent = `PTD-${String(n).padStart(4, '0')}`;
+  const cfg = REF_CONFIG[activeForm] || REF_CONFIG.ptd;
+  const n = parseInt(localStorage.getItem(cfg.key) || '0', 10) + 1;
+  document.getElementById('permitRef').textContent = `${cfg.prefix}-${String(n).padStart(4, '0')}`;
 }
 
 function advancePermitRef() {
-  const n = parseInt(localStorage.getItem(PERMIT_REF_KEY) || '0', 10) + 1;
-  localStorage.setItem(PERMIT_REF_KEY, String(n));
+  const cfg = REF_CONFIG[activeForm] || REF_CONFIG.ptd;
+  const n = parseInt(localStorage.getItem(cfg.key) || '0', 10) + 1;
+  localStorage.setItem(cfg.key, String(n));
 }
 
 // ── Operator name pre-fill ─────────────────────────────────────────────────
