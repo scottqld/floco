@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.5.1';
+const APP_VERSION = 'v1.5.2';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -643,6 +643,18 @@ document.querySelectorAll('input[name="maint_operating"]').forEach(radio => {
   });
 });
 
+// ── Shared PDF helper ───────────────────────────────────────────────────────
+function formatSubmittedAt(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const dd  = String(d.getDate()).padStart(2, '0');
+  const mm  = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  const h   = d.getHours(), min = String(d.getMinutes()).padStart(2, '0');
+  const ampm = h >= 12 ? 'pm' : 'am';
+  return `${dd}/${mm}/${yyyy}  ${h % 12 || 12}:${min} ${ampm}`;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // PDF GENERATION (browser-side, pdf-lib from CDN)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -737,7 +749,7 @@ async function generatePermitPDF(formData) {
 
   // Site details
   const D_LBL = 130;
-  [['Client', formData.client], ['Site', formData.site], ['Site Address', formData.site_address], ['Basin', formData.basin]]
+  [['Client', formData.client], ['Site', formData.site], ['Site Address', formData.site_address], ['Basin', formData.basin], ['Date / Time', formatSubmittedAt(formData.submitted_at)]]
     .forEach(([lbl, val]) => { drawText(page, lbl + ':', M, y, { font: fBold, size: 10 }); drawText(page, val || '', M + D_LBL, y, { size: 10, maxWidth: CW - D_LBL }); y += 15; });
   y += 6;
 
@@ -821,6 +833,7 @@ function collectInstallData() {
   data.inst_signature   = sigInstall.toDataURL();
   data.inst_photos      = [...installPhotos];
   data.permit_reference = document.getElementById('permitRef').textContent;
+  data.submitted_at     = new Date().toISOString();
   return data;
 }
 
@@ -879,7 +892,7 @@ async function generateInstallPDF(d) {
 
   // Site details
   const D_LBL=130;
-  [['Client',d.client],['Site',d.site],['Site Address',d.site_address],['Basin',d.basin]]
+  [['Client',d.client],['Site',d.site],['Site Address',d.site_address],['Basin',d.basin],['Date / Time',formatSubmittedAt(d.submitted_at)]]
     .forEach(([lbl,val])=>{drawText(page,lbl+':',M,y,{font:fBold,size:10});drawText(page,val||'',M+D_LBL,y,{size:10,maxWidth:CW-D_LBL});y+=15;});
   y+=8;
 
@@ -959,6 +972,7 @@ function collectMaintData() {
   data.maint_extra_photos   = [...maintExtraPhotos];
   data.maint_signature      = sigMaint.toDataURL();
   data.permit_reference     = document.getElementById('permitRef').textContent;
+  data.submitted_at         = new Date().toISOString();
   return data;
 }
 
@@ -1018,7 +1032,7 @@ async function generateMaintPDF(d) {
 
   // Site details
   const D_LBL=130;
-  [['Client',d.client],['Site',d.site],['Site Address',d.site_address],['Basin',d.basin]]
+  [['Client',d.client],['Site',d.site],['Site Address',d.site_address],['Basin',d.basin],['Date / Time',formatSubmittedAt(d.submitted_at)]]
     .forEach(([lbl,val])=>{drawText(page,lbl+':',M,y,{font:fBold,size:10});drawText(page,val||'',M+D_LBL,y,{size:10,maxWidth:CW-D_LBL});y+=15;});
   y+=8;
 
@@ -1226,6 +1240,7 @@ function collectData() {
   data.after_ntu_photo   = singlePhotos.after_ntu_photo   ?? null;
   data.additional_photos = [...extraPhotos];
   data.permit_reference  = document.getElementById('permitRef').textContent;
+  data.submitted_at      = new Date().toISOString();
   return data;
 }
 
