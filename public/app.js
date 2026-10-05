@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.5.3';
+const APP_VERSION = 'v1.5.4';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -644,15 +644,29 @@ document.querySelectorAll('input[name="maint_operating"]').forEach(radio => {
 });
 
 // ── Shared PDF helper ───────────────────────────────────────────────────────
-function formatSubmittedAt(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
+function formatSubmittedAt(val) {
+  if (!val) return '';
+  const d = new Date(val);
+  if (isNaN(d)) return val;
   const dd  = String(d.getDate()).padStart(2, '0');
   const mm  = String(d.getMonth() + 1).padStart(2, '0');
   const yyyy = d.getFullYear();
   const h   = d.getHours(), min = String(d.getMinutes()).padStart(2, '0');
   const ampm = h >= 12 ? 'pm' : 'am';
   return `${dd}/${mm}/${yyyy}  ${h % 12 || 12}:${min} ${ampm}`;
+}
+
+function localDateTimeValue(d = new Date()) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function setFormDateTime() {
+  const now = localDateTimeValue();
+  ['ptd_date_time', 'inst_date_time', 'maint_date_time'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = now;
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -833,7 +847,7 @@ function collectInstallData() {
   data.inst_signature   = sigInstall.toDataURL();
   data.inst_photos      = [...installPhotos];
   data.permit_reference = document.getElementById('permitRef').textContent;
-  data.submitted_at     = new Date().toISOString();
+  data.submitted_at     = document.getElementById('inst_date_time').value || new Date().toISOString();
   return data;
 }
 
@@ -972,7 +986,7 @@ function collectMaintData() {
   data.maint_extra_photos   = [...maintExtraPhotos];
   data.maint_signature      = sigMaint.toDataURL();
   data.permit_reference     = document.getElementById('permitRef').textContent;
-  data.submitted_at         = new Date().toISOString();
+  data.submitted_at         = document.getElementById('maint_date_time').value || new Date().toISOString();
   return data;
 }
 
@@ -1240,7 +1254,7 @@ function collectData() {
   data.after_ntu_photo   = singlePhotos.after_ntu_photo   ?? null;
   data.additional_photos = [...extraPhotos];
   data.permit_reference  = document.getElementById('permitRef').textContent;
-  data.submitted_at      = new Date().toISOString();
+  data.submitted_at      = document.getElementById('ptd_date_time').value || new Date().toISOString();
   return data;
 }
 
@@ -1355,6 +1369,7 @@ function setDefaults() {
   document.getElementById('valid_to_date').value =
     `${to.getFullYear()}-${pad(to.getMonth() + 1)}-${pad(to.getDate())}`;
   document.getElementById('valid_to_time').value = timeStr;
+  setFormDateTime();
 }
 
 // ── Permit reference number ────────────────────────────────────────────────

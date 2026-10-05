@@ -167,6 +167,9 @@ form { padding: 12px 12px 0; max-width: 680px; margin: 0 auto; }
   margin-bottom: 12px;
   box-shadow: var(--shadow);
 }
+.form-section--datetime {
+  padding: 14px 18px;
+}
 
 .section-title {
   display: flex;
