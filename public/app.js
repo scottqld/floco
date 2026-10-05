@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.5.2';
+const APP_VERSION = 'v1.5.3';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -897,7 +897,7 @@ async function generateInstallPDF(d) {
   y+=8;
 
   // Installation details box
-  const DETS = [[`Dosing System Type`,d.inst_dosing_type||''],['Jar Test Undertaken',d.inst_jar_test||''],['Dose Rate',d.inst_dose_rate ? `${d.inst_dose_rate} mL/min` : '']];
+  const DETS = [[`Dosing System Type`,d.inst_dosing_type||''],['Jar Test Undertaken',d.inst_jar_test||''],['Dose Rate',d.inst_dose_rate ? `${d.inst_dose_rate} ppm` : '']];
   const DH = 18, detH = DH * DETS.length + DH;
   cell(page, M, y, CW/2, DH, 'Installation Details', {bg:C_GREY, bold:true});
   cell(page, M+CW/2, y, CW/2, DH, 'Value', {bg:C_GREY, bold:true});
