@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.5.4';
+const APP_VERSION = 'v1.5.5';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -1207,7 +1207,7 @@ form.addEventListener('submit', async e => {
     }
 
     const ref      = data.permit_reference || '';
-    const filename = `${docLabel}-${ref || new Date().toISOString().slice(0,10)}.pdf`;
+    const filename = `${docLabel}-${ref || (data.submitted_at || new Date().toISOString()).slice(0,10)}.pdf`;
     const pdfBlob  = new Blob([pdfBytes], { type: 'application/pdf' });
     const pdfFile  = new File([pdfBlob], filename, { type: 'application/pdf' });
 
