@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.5.5';
+const APP_VERSION = 'v1.5.6';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -748,7 +748,7 @@ async function generatePermitPDF(formData) {
 
   // Logo
   try {
-    const res = await fetch('/floco_logo.png');
+    const res = await fetch('floco_logo.png');
     const buf = new Uint8Array(await res.arrayBuffer());
     const img = await pdfDoc.embedPng(buf);
     const dims = img.scaleToFit(130, 80);
@@ -890,7 +890,7 @@ async function generateInstallPDF(d) {
 
   // Logo
   try {
-    const res=await fetch('/floco_logo.png'); const buf=new Uint8Array(await res.arrayBuffer());
+    const res=await fetch('floco_logo.png'); const buf=new Uint8Array(await res.arrayBuffer());
     const img=await pdfDoc.embedPng(buf); const dims=img.scaleToFit(130,80);
     page.drawImage(img,{x:M+(CW-dims.width)/2, y:pdfY(y,dims.height), width:dims.width, height:dims.height});
     y+=dims.height+10;
@@ -1030,7 +1030,7 @@ async function generateMaintPDF(d) {
 
   // Logo
   try {
-    const res=await fetch('/floco_logo.png'); const buf=new Uint8Array(await res.arrayBuffer());
+    const res=await fetch('floco_logo.png'); const buf=new Uint8Array(await res.arrayBuffer());
     const img=await pdfDoc.embedPng(buf); const dims=img.scaleToFit(130,80);
     page.drawImage(img,{x:M+(CW-dims.width)/2, y:pdfY(y,dims.height), width:dims.width, height:dims.height});
     y+=dims.height+10;
