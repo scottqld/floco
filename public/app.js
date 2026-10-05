@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.4.0';
+const APP_VERSION = 'v1.5.0';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -407,15 +407,17 @@ class SignaturePad {
 // ── Init signature pads ────────────────────────────────────────────────────
 const sigIssuer  = new SignaturePad(document.getElementById('sigIssuer'));
 const sigInstall = new SignaturePad(document.getElementById('sigInstall'));
+const sigMaint   = new SignaturePad(document.getElementById('sigMaint'));
 
 document.querySelectorAll('.sig-clear-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.dataset.target === 'sigIssuer')  sigIssuer.clear();
     if (btn.dataset.target === 'sigInstall') sigInstall.clear();
+    if (btn.dataset.target === 'sigMaint')   sigMaint.clear();
   });
 });
 
-window.addEventListener('load', () => { sigIssuer._resize(); sigInstall._resize(); });
+window.addEventListener('load', () => { sigIssuer._resize(); sigInstall._resize(); sigMaint._resize(); });
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PHOTO CAPTURE
@@ -551,6 +553,95 @@ function addInstPhotoThumb(dataUrl, index) {
   wrap.appendChild(img); wrap.appendChild(removeBtn);
   instPhotoGrid.appendChild(wrap);
 }
+
+// ── Maintenance / Refill single photos (before & after) ────────────────────
+const maintSinglePhotos = {};
+
+function setMaintSinglePhoto(key, dataUrl) {
+  maintSinglePhotos[key] = dataUrl;
+  const preview = document.getElementById(`maint_${key}_preview`);
+  if (!preview) return;
+  preview.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'photo-thumb single-thumb';
+  const img = document.createElement('img');
+  img.src = dataUrl; img.alt = key;
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button'; removeBtn.className = 'photo-remove'; removeBtn.textContent = '×';
+  removeBtn.addEventListener('click', () => { delete maintSinglePhotos[key]; preview.innerHTML = ''; });
+  wrap.appendChild(img); wrap.appendChild(removeBtn);
+  preview.appendChild(wrap);
+}
+
+function initMaintSinglePhoto(btnId, inputId, key) {
+  const btn   = document.getElementById(btnId);
+  const input = document.getElementById(inputId);
+  if (!btn || !input) return;
+  btn.addEventListener('click', () => input.click());
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    if (!file) return;
+    const dataUrl = await compressPhoto(file);
+    setMaintSinglePhoto(key, dataUrl);
+    input.value = '';
+  });
+}
+
+initMaintSinglePhoto('maintBeforePhotoBtn', 'maintBeforePhotoInput', 'before');
+initMaintSinglePhoto('maintAfterPhotoBtn',  'maintAfterPhotoInput',  'after');
+
+// ── Maintenance extra photos (max 4) ────────────────────────────────────────
+const maintExtraPhotos = [];
+const maintPhotoInput  = document.getElementById('maintPhotoInput');
+const maintPhotoGrid   = document.getElementById('maintPhotoGrid');
+
+function updateMaintAddBtn() {
+  const btn = document.getElementById('maintAddPhotoBtn');
+  if (btn) btn.disabled = maintExtraPhotos.length >= 4;
+}
+
+document.getElementById('maintAddPhotoBtn').addEventListener('click', () => {
+  if (maintExtraPhotos.length >= 4) { showToast('Maximum 4 photos allowed.', 'error'); return; }
+  maintPhotoInput.click();
+});
+
+maintPhotoInput.addEventListener('change', async () => {
+  const files = Array.from(maintPhotoInput.files);
+  const remaining = 4 - maintExtraPhotos.length;
+  for (const file of files.slice(0, remaining)) {
+    const dataUrl = await compressPhoto(file);
+    maintExtraPhotos.push(dataUrl);
+    addMaintExtraThumb(dataUrl, maintExtraPhotos.length - 1);
+  }
+  updateMaintAddBtn();
+  maintPhotoInput.value = '';
+});
+
+function addMaintExtraThumb(dataUrl, index) {
+  const wrap = document.createElement('div');
+  wrap.className = 'photo-thumb';
+  wrap.dataset.index = index;
+  const img = document.createElement('img');
+  img.src = dataUrl; img.alt = `Photo ${index + 1}`;
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button'; removeBtn.className = 'photo-remove'; removeBtn.textContent = '×';
+  removeBtn.addEventListener('click', () => {
+    maintExtraPhotos.splice(parseInt(wrap.dataset.index, 10), 1);
+    maintPhotoGrid.innerHTML = '';
+    maintExtraPhotos.forEach((p, i) => addMaintExtraThumb(p, i));
+    updateMaintAddBtn();
+  });
+  wrap.appendChild(img); wrap.appendChild(removeBtn);
+  maintPhotoGrid.appendChild(wrap);
+}
+
+// ── Maintenance operating conditional ──────────────────────────────────────
+document.querySelectorAll('input[name="maint_operating"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const group = document.getElementById('maintOperatingDetailsGroup');
+    if (group) group.hidden = radio.value !== 'No';
+  });
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PDF GENERATION (browser-side, pdf-lib from CDN)
@@ -858,6 +949,165 @@ async function generateInstallPDF(d) {
   return pdfDoc.save();
 }
 
+// ── Maint data collector ────────────────────────────────────────────────────
+function collectMaintData() {
+  const fd = new FormData(form);
+  const data = {};
+  for (const [k, v] of fd.entries()) data[k] = v;
+  data.maint_before_photo   = maintSinglePhotos.before  ?? null;
+  data.maint_after_photo    = maintSinglePhotos.after   ?? null;
+  data.maint_extra_photos   = [...maintExtraPhotos];
+  data.maint_signature      = sigMaint.toDataURL();
+  data.permit_reference     = document.getElementById('permitRef').textContent;
+  return data;
+}
+
+// ── Maint PDF generator ─────────────────────────────────────────────────────
+async function generateMaintPDF(d) {
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+
+  const A4_W = 595.28, A4_H = 841.89, M = 50;
+  const CW = A4_W - 2 * M, PAD = 5;
+  const C_BLACK = rgb(0,0,0), C_GREY = rgb(0.851,0.851,0.851);
+  const C_GREEN = rgb(0.153,0.682,0.376), C_RED = rgb(0.831,0.227,0.227);
+
+  function b64ToBytes(b64) { const bin=atob(b64); const a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i); return a; }
+  function parsePic(u) { if(!u||!u.includes('base64,'))return null; const m=u.match(/^data:image\/(\w+);base64,(.+)$/); return m?{type:m[1],data:b64ToBytes(m[2])}:null; }
+
+  const pdfDoc = await PDFDocument.create();
+  const fReg  = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  function addPage() { return pdfDoc.addPage([A4_W, A4_H]); }
+  function pdfY(topY, h=0) { return A4_H - topY - h; }
+  function drawRect(pg, x, topY, w, h, {fill}={}) { pg.drawRectangle({x, y:pdfY(topY,h), width:w, height:h, color:fill||undefined, borderColor:C_BLACK, borderWidth:0.5}); }
+  function drawText(pg, text, x, topY, {font=fReg, size=9, maxWidth}={}) { pg.drawText(String(text??''), {x, y:pdfY(topY,size)+1, font, size, color:C_BLACK, maxWidth}); }
+  function cell(pg, x, topY, w, h, text, {bg, bold, size=9}={}) {
+    drawRect(pg, x, topY, w, h, {fill:bg});
+    if(text!=null) drawText(pg, text, x+PAD, topY+PAD, {font:bold?fBold:fReg, size, maxWidth:w-PAD*2});
+  }
+  async function embedImg(pic) { try { return pic.type==='png' ? await pdfDoc.embedPng(pic.data) : await pdfDoc.embedJpg(pic.data); } catch{return null;} }
+  function wrapText(text, font, size, maxWidth) {
+    const lines=[];
+    for(const para of String(text??'').split('\n')) {
+      if(!para){lines.push('');continue;}
+      const words=para.split(' '); let cur='';
+      for(const w of words){const t=cur?cur+' '+w:w; if(font.widthOfTextAtSize(t,size)>maxWidth&&cur){lines.push(cur);cur=w;}else cur=t;}
+      if(cur)lines.push(cur);
+    }
+    return lines;
+  }
+
+  let page = addPage(), y = M;
+
+  // Logo
+  try {
+    const res=await fetch('/floco_logo.png'); const buf=new Uint8Array(await res.arrayBuffer());
+    const img=await pdfDoc.embedPng(buf); const dims=img.scaleToFit(130,80);
+    page.drawImage(img,{x:M+(CW-dims.width)/2, y:pdfY(y,dims.height), width:dims.width, height:dims.height});
+    y+=dims.height+10;
+  } catch { y+=90; }
+
+  // Title
+  const titleText='Dosing System Maintenance / Refill';
+  drawText(page, titleText, M+(CW-fBold.widthOfTextAtSize(titleText,16))/2, y, {font:fBold, size:16});
+  y+=8;
+  const refText = d.permit_reference || '';
+  drawText(page, refText, M+(CW-fReg.widthOfTextAtSize(refText,9))/2, y+14, {size:9});
+  y+=30;
+
+  // Site details
+  const D_LBL=130;
+  [['Client',d.client],['Site',d.site],['Site Address',d.site_address],['Basin',d.basin]]
+    .forEach(([lbl,val])=>{drawText(page,lbl+':',M,y,{font:fBold,size:10});drawText(page,val||'',M+D_LBL,y,{size:10,maxWidth:CW-D_LBL});y+=15;});
+  y+=8;
+
+  // Service details table
+  const DH=18;
+  const DETS=[
+    ['Dosing System Type',      d.maint_dosing_type||''],
+    ['Initial Treatment Volume',d.maint_initial_volume ? `${d.maint_initial_volume} L` : ''],
+    ['Refill Amount',           d.maint_refill_amount  ? `${d.maint_refill_amount} L`  : ''],
+    ['System Operating Correctly', d.maint_operating||''],
+  ];
+  cell(page, M, y, CW/2, DH, 'Service Detail', {bg:C_GREY, bold:true});
+  cell(page, M+CW/2, y, CW/2, DH, 'Value', {bg:C_GREY, bold:true});
+  y+=DH;
+  DETS.forEach(([lbl,val])=>{
+    const isOperating = lbl==='System Operating Correctly';
+    cell(page, M, y, CW/2, DH, lbl);
+    if(isOperating){
+      const ok=val==='Yes';
+      drawRect(page, M+CW/2, y, CW/2, DH, {fill: val ? (ok?C_GREEN:C_RED) : undefined});
+      if(val) drawText(page, val, M+CW/2+PAD, y+PAD, {font:fBold, size:9, maxWidth:CW/2-PAD*2});
+    } else {
+      cell(page, M+CW/2, y, CW/2, DH, val);
+    }
+    y+=DH;
+  });
+  y+=10;
+
+  // Operating details (if No)
+  if(d.maint_operating==='No' && d.maint_operating_details) {
+    if(y+50>A4_H-M){page=addPage();y=M;}
+    const detLines=wrapText(d.maint_operating_details, fReg, 9, CW-PAD*2);
+    const LINE_H=11, detH=Math.max(30, detLines.length*LINE_H+20);
+    drawRect(page, M, y, CW, detH);
+    drawText(page, 'Issue Details:', M+PAD, y+PAD, {font:fBold, size:9});
+    detLines.forEach((line,i)=>drawText(page, line, M+PAD, y+PAD+13+i*LINE_H, {size:9}));
+    y+=detH+10;
+  }
+
+  // Before/After photos side by side
+  const beforePic=parsePic(d.maint_before_photo), afterPic=parsePic(d.maint_after_photo);
+  if(beforePic||afterPic){
+    const PHOTO_H=140, COL_W=(CW-10)/2, LABEL_H=18;
+    if(y+PHOTO_H+LABEL_H+10>A4_H-M){page=addPage();y=M;}
+    [['Before',beforePic,0],['After',afterPic,COL_W+10]].forEach(([lbl,pic,dx])=>{
+      cell(page, M+dx, y, COL_W, LABEL_H, lbl, {bg:C_GREY, bold:true});
+      drawRect(page, M+dx, y+LABEL_H, COL_W, PHOTO_H);
+      if(pic){
+        embedImg(pic).then(img=>{
+          if(!img)return;
+          const dims=img.scaleToFit(COL_W-PAD*2, PHOTO_H-PAD*2);
+          page.drawImage(img,{x:M+dx+PAD+(COL_W-PAD*2-dims.width)/2, y:pdfY(y+LABEL_H+PAD,dims.height), width:dims.width, height:dims.height});
+        });
+      }
+    });
+    y+=PHOTO_H+LABEL_H+10;
+  }
+
+  // Notes
+  if(y+60>A4_H-M){page=addPage();y=M;}
+  const notesText=d.maint_notes||'';
+  const noteLines=notesText?wrapText(notesText,fReg,9,CW-PAD*2):[];
+  const LINE_H=11, notesH=Math.max(40, noteLines.length*LINE_H+24);
+  if(y+notesH>A4_H-M){page=addPage();y=M;}
+  drawRect(page, M, y, CW, notesH);
+  drawText(page, 'Additional Comments:', M+PAD, y+PAD, {font:fBold, size:9});
+  noteLines.forEach((line,i)=>drawText(page, line, M+PAD, y+PAD+13+i*LINE_H, {size:9}));
+  y+=notesH+10;
+
+  // Completed by / signature
+  if(y+80>A4_H-M){page=addPage();y=M;}
+  const ISS_LBL=120, ISS_VAL=CW-ISS_LBL, ISS_H=70;
+  cell(page, M, y, ISS_LBL, ISS_H, 'Completed By', {bg:C_GREY, bold:true});
+  cell(page, M+ISS_LBL, y, ISS_VAL, ISS_H, d.maint_completed_by||'');
+  const sigPic=parsePic(d.maint_signature);
+  if(sigPic){const img=await embedImg(sigPic);if(img){const dims=img.scaleToFit(ISS_VAL-PAD*2,44);page.drawImage(img,{x:M+ISS_LBL+PAD,y:pdfY(y+18,dims.height),width:dims.width,height:dims.height});}}
+  y+=ISS_H+10;
+
+  // Extra photos (one per page)
+  for(const photo of (d.maint_extra_photos||[]).filter(p=>p?.includes('base64,'))){
+    const pic=parsePic(photo);if(!pic)continue;
+    const img=await embedImg(pic);if(!img)continue;
+    const ep=addPage(); const dims=img.scaleToFit(CW,A4_H-M*2);
+    ep.drawImage(img,{x:M+(CW-dims.width)/2, y:M+(A4_H-M*2-dims.height)/2, width:dims.width, height:dims.height});
+  }
+
+  return pdfDoc.save();
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // FORM SUBMISSION
 // ═══════════════════════════════════════════════════════════════════════════
@@ -865,10 +1115,13 @@ async function generateInstallPDF(d) {
 const form              = document.getElementById('permitForm');
 const submitBtn         = document.getElementById('submitBtn');
 const installSubmitBtn  = document.getElementById('installSubmitBtn');
+const maintSubmitBtn    = document.getElementById('maintSubmitBtn');
 const loadingOverlay    = document.getElementById('loadingOverlay');
 
 function getActiveSubmitBtn() {
-  return activeForm === 'install' ? installSubmitBtn : submitBtn;
+  if (activeForm === 'install') return installSubmitBtn;
+  if (activeForm === 'maint')   return maintSubmitBtn;
+  return submitBtn;
 }
 
 // Validate only fields in the site section + active form view
@@ -895,6 +1148,10 @@ form.addEventListener('submit', async e => {
     showToast('Please answer the jar test question.', 'error');
     return;
   }
+  if (activeForm === 'maint' && !form.querySelector('input[name="maint_operating"]:checked')) {
+    showToast('Please answer the operating correctly question.', 'error');
+    return;
+  }
 
   if (!checkActiveFormValidity()) {
     showToast('Please fill in all required fields.', 'error');
@@ -911,6 +1168,10 @@ form.addEventListener('submit', async e => {
       data      = collectInstallData();
       pdfBytes  = await generateInstallPDF(data);
       docLabel  = 'Installation-Checklist';
+    } else if (activeForm === 'maint') {
+      data      = collectMaintData();
+      pdfBytes  = await generateMaintPDF(data);
+      docLabel  = 'Maintenance-Refill';
     } else {
       data      = collectData();
       pdfBytes  = await generatePermitPDF(data);
@@ -979,6 +1240,7 @@ function resetFormBody() {
   issuedToUserEdited = false;
   sigIssuer.clear();
   sigInstall.clear();
+  sigMaint.clear();
   Object.keys(singlePhotos).forEach(k => delete singlePhotos[k]);
   ['initial_ph_photo','initial_ntu_photo','after_ph_photo','after_ntu_photo'].forEach(f => {
     const el = document.getElementById(f + '_preview');
@@ -989,6 +1251,13 @@ function resetFormBody() {
   installPhotos.length = 0;
   instPhotoGrid.innerHTML = '';
   updateInstAddBtn();
+  Object.keys(maintSinglePhotos).forEach(k => delete maintSinglePhotos[k]);
+  ['maint_before_preview','maint_after_preview'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  maintExtraPhotos.length = 0;
+  maintPhotoGrid.innerHTML = '';
+  updateMaintAddBtn();
+  const maintOpGroup = document.getElementById('maintOperatingDetailsGroup');
+  if (maintOpGroup) maintOpGroup.hidden = true;
   ['badge_initial_ph','badge_initial_ntu','badge_after_ph','badge_after_ntu']
     .forEach(id => { const b = document.getElementById(id); if (b) { b.textContent = ''; b.className = 'reading-badge'; } });
   document.getElementById('draftBanner').hidden = true;
@@ -1007,6 +1276,7 @@ function resetForm() {
   lockPermitBody();
   sigIssuer.clear();
   sigInstall.clear();
+  sigMaint.clear();
   Object.keys(singlePhotos).forEach(k => delete singlePhotos[k]);
   ['initial_ph_photo','initial_ntu_photo','after_ph_photo','after_ntu_photo'].forEach(f => {
     const el = document.getElementById(f + '_preview');
@@ -1017,6 +1287,13 @@ function resetForm() {
   installPhotos.length = 0;
   instPhotoGrid.innerHTML = '';
   updateInstAddBtn();
+  Object.keys(maintSinglePhotos).forEach(k => delete maintSinglePhotos[k]);
+  ['maint_before_preview','maint_after_preview'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  maintExtraPhotos.length = 0;
+  maintPhotoGrid.innerHTML = '';
+  updateMaintAddBtn();
+  const maintOpGroup2 = document.getElementById('maintOperatingDetailsGroup');
+  if (maintOpGroup2) maintOpGroup2.hidden = true;
   ['badge_initial_ph','badge_initial_ntu','badge_after_ph','badge_after_ntu']
     .forEach(id => { const el = document.getElementById(id); if (el) { el.textContent = ''; el.className = 'reading-badge'; } });
   document.getElementById('draftBanner').hidden = true;
