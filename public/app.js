@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.5.9';
+const APP_VERSION = 'v1.6.0';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -794,7 +794,7 @@ async function generatePermitPDF(formData) {
 
   // Water quality table
   const WQ = [120, 75, 75, CW - 120 - 75 - 75];
-  const PHOTO_W = WQ[3] - PAD * 2, PHOTO_H = Math.round(PHOTO_W * 3 / 4);
+  const PHOTO_W = WQ[3] - PAD * 2, PHOTO_H = Math.min(Math.round(PHOTO_W * 3 / 4), 90);
   const DATA_ROW = PHOTO_H + PAD * 2, HDR_ROW = 20;
 
   if (y + HDR_ROW + DATA_ROW * 2 > A4_H - M) { page = addPage(); y = M; }
