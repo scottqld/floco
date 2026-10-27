@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.5.6';
+const APP_VERSION = 'v1.5.7';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -698,11 +698,6 @@ async function generatePermitPDF(formData) {
     if (timeStr) { const [hh, mm] = timeStr.split(':'); const h = parseInt(hh, 10); r += ` ${h % 12 || 12}:${mm} ${h >= 12 ? 'pm' : 'am'}`; }
     return r;
   }
-  function addDays(dateStr, days) {
-    if (!dateStr) return '';
-    const d = new Date(dateStr); d.setDate(d.getDate() + days);
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
   function wrapText(text, font, size, maxWidth) {
     const lines = [];
     for (const para of String(text ?? '').split('\n')) {
@@ -728,9 +723,11 @@ async function generatePermitPDF(formData) {
 
   function addPage() { return pdfDoc.addPage([A4_W, A4_H]); }
   function pdfY(topY, h = 0) { return A4_H - topY - h; }
-  function drawRect(page, x, topY, w, h, { fill } = {}) {
+  function drawRect(page, x, topY, w, h, { fill, border = true } = {}) {
     page.drawRectangle({ x, y: pdfY(topY, h), width: w, height: h,
-      color: fill || undefined, borderColor: C_BLACK, borderWidth: 0.5 });
+      color: fill || undefined,
+      borderColor: border ? C_BLACK : undefined,
+      borderWidth: border ? 0.5 : 0 });
   }
   function drawText(page, text, x, topY, { font = fReg, size = 9, maxWidth } = {}) {
     page.drawText(String(text ?? ''), { x, y: pdfY(topY, size) + 1, font, size, color: C_BLACK, maxWidth });
@@ -746,39 +743,60 @@ async function generatePermitPDF(formData) {
 
   let page = addPage(), y = M;
 
-  // Logo
+  // Logo (centred)
   try {
     const res = await fetch('floco_logo.png');
     const buf = new Uint8Array(await res.arrayBuffer());
     const img = await pdfDoc.embedPng(buf);
-    const dims = img.scaleToFit(130, 80);
+    const dims = img.scaleToFit(160, 100);
     page.drawImage(img, { x: M + (CW - dims.width) / 2, y: pdfY(y, dims.height), width: dims.width, height: dims.height });
-    y += dims.height + 10;
-  } catch { y += 90; }
+    y += dims.height + 16;
+  } catch { y += 116; }
 
-  // Title
-  const titleText = 'Permit to Discharge';
-  drawText(page, titleText, M + (CW - fBold.widthOfTextAtSize(titleText, 20)) / 2, y, { font: fBold, size: 20 });
+  // Title — left-aligned, large bold
+  drawText(page, 'Permit to Discharge', M, y, { font: fBold, size: 22 });
   y += 30;
 
-  // Site details
+  // Note — italic, small
+  const noteText = `(Note: Discharge permit only valid for 5 days, or until rain event prior to ${validFrom}.)`;
+  wrapText(noteText, fItal, 8, CW).forEach(line => { drawText(page, line, M, y, { font: fItal, size: 8 }); y += 11; });
+  y += 10;
+
+  // Site details group 1
   const D_LBL = 130;
-  [['Client', formData.client], ['Site', formData.site], ['Site Address', formData.site_address], ['Basin', formData.basin], ['Date / Time', formatSubmittedAt(formData.submitted_at)]]
-    .forEach(([lbl, val]) => { drawText(page, lbl + ':', M, y, { font: fBold, size: 10 }); drawText(page, val || '', M + D_LBL, y, { size: 10, maxWidth: CW - D_LBL }); y += 15; });
+  [
+    ['Client',           formData.client],
+    ['Site',             formData.site],
+    ['Site Address',     formData.site_address],
+    ['Basin',            formData.basin],
+    ['Basin Reference',  formData.basin_reference],
+    ['Date / Time',      formatSubmittedAt(formData.submitted_at)],
+  ].forEach(([lbl, val]) => {
+    if (!val) return;
+    drawText(page, lbl + ':', M, y, { font: fBold, size: 10 });
+    drawText(page, val, M + D_LBL, y, { size: 10, maxWidth: CW - D_LBL });
+    y += 15;
+  });
   y += 6;
 
-  [['Discharge To', formData.discharge_to], ['Valid From', validFrom], ['Valid To', validTo]]
-    .forEach(([lbl, val]) => { drawText(page, lbl + ':', M, y, { font: fBold, size: 10 }); drawText(page, val || '', M + D_LBL, y, { size: 10, maxWidth: CW - D_LBL }); y += 15; });
-  y += 4;
-
-  const noteText = `(Note: Discharge permit only valid for 5 days, or until rain event prior to ${fmtDate(addDays(formData.valid_from_date, 5))}.)`;
-  wrapText(noteText, fItal, 9, CW).forEach(line => { drawText(page, line, M, y, { font: fItal, size: 9 }); y += 12; });
-  y += 6;
+  // Site details group 2
+  [
+    ['Discharge To', formData.discharge_to],
+    ['Valid From',   validFrom],
+    ['Valid To',     validTo],
+  ].forEach(([lbl, val]) => {
+    drawText(page, lbl + ':', M, y, { font: fBold, size: 10 });
+    drawText(page, val || '', M + D_LBL, y, { size: 10, maxWidth: CW - D_LBL });
+    y += 15;
+  });
+  y += 12;
 
   // Water quality table
   const WQ = [120, 75, 75, CW - 120 - 75 - 75];
   const PHOTO_W = WQ[3] - PAD * 2, PHOTO_H = Math.round(PHOTO_W * 3 / 4);
   const DATA_ROW = PHOTO_H + PAD * 2, HDR_ROW = 20;
+
+  if (y + HDR_ROW + DATA_ROW * 2 > A4_H - M) { page = addPage(); y = M; }
 
   let cx = M;
   ['Reading', 'pH', 'NTU', ''].forEach((h, i) => { cell(page, cx, y, WQ[i], HDR_ROW, h, { bg: C_GREY, bold: true }); cx += WQ[i]; });
@@ -800,28 +818,36 @@ async function generatePermitPDF(formData) {
   }
   y += 10;
 
-  // Issued By / To
-  if (y + 160 > A4_H - M) { page = addPage(); y = M; }
-  const ISS_LBL = 120, ISS_VAL = CW - ISS_LBL, ISS_H = 70;
+  // Combined sign-off block: Issued By / Issued To / Special Instructions
+  const ISS_LBL = 120, ISS_VAL = CW - ISS_LBL;
+  const ISS_BY_H = 70, ISS_TO_H = 50;
+  const siText  = formData.special_instructions || '';
+  const siLines = siText ? wrapText(siText, fReg, 9, CW - PAD * 2) : [];
+  const LINE_H  = 11, SI_H = Math.max(36, siLines.length * LINE_H + 22);
+  const BLOCK_H = ISS_BY_H + ISS_TO_H + SI_H;
 
-  cell(page, M, y, ISS_LBL, ISS_H, 'Issued By', { bg: C_GREY, bold: true });
-  cell(page, M + ISS_LBL, y, ISS_VAL, ISS_H, formData.issued_by_name || '');
+  if (y + BLOCK_H > A4_H - M) { page = addPage(); y = M; }
+
+  // Issued By row
+  cell(page, M, y, ISS_LBL, ISS_BY_H, 'Issued By', { bg: C_GREY, bold: true });
+  cell(page, M + ISS_LBL, y, ISS_VAL, ISS_BY_H, formData.issued_by_name || '');
   const sigByPic = parsePic(formData.issued_by_signature);
-  if (sigByPic) { const img = await embedImg(sigByPic); if (img) { const d = img.scaleToFit(ISS_VAL - PAD*2, 44); page.drawImage(img, { x: M+ISS_LBL+PAD, y: pdfY(y+18, d.height), width: d.width, height: d.height }); } }
-  y += ISS_H;
+  if (sigByPic) {
+    const img = await embedImg(sigByPic);
+    if (img) { const d = img.scaleToFit(ISS_VAL - PAD*2, ISS_BY_H - 22); page.drawImage(img, { x: M+ISS_LBL+PAD, y: pdfY(y+20, d.height), width: d.width, height: d.height }); }
+  }
+  y += ISS_BY_H;
 
-  cell(page, M, y, ISS_LBL, ISS_H, 'Issued To', { bg: C_GREY, bold: true });
-  cell(page, M + ISS_LBL, y, ISS_VAL, ISS_H, formData.issued_to_name || '');
-  y += ISS_H + 10;
+  // Issued To row
+  cell(page, M, y, ISS_LBL, ISS_TO_H, 'Issued To', { bg: C_GREY, bold: true });
+  cell(page, M + ISS_LBL, y, ISS_VAL, ISS_TO_H, formData.issued_to_name || '');
+  y += ISS_TO_H;
 
-  // Special instructions
-  const siText = formData.special_instructions || '';
-  const siLines = siText ? wrapText(siText, fReg, 9, CW - PAD*2) : [];
-  const LINE_H = 11, siH = Math.max(40, siLines.length * LINE_H + 24);
-  if (y + siH > A4_H - M) { page = addPage(); y = M; }
-  drawRect(page, M, y, CW, siH);
+  // Special Instructions row (full width, no label column)
+  drawRect(page, M, y, CW, SI_H);
   drawText(page, 'Special Instructions:', M + PAD, y + PAD, { font: fBold, size: 9 });
   siLines.forEach((line, i) => drawText(page, line, M + PAD, y + PAD + 13 + i * LINE_H, { size: 9 }));
+  y += SI_H;
 
   // Extra photos (one per page)
   for (const photo of (formData.additional_photos || []).filter(p => p?.includes('base64,'))) {
@@ -1450,7 +1476,7 @@ updateOfflineBanner(); // show banner immediately if starting offline
 // SAVED SITES – CASCADING PICKERS (Client → Site → Basin)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const SITE_FIELDS = ['client','site','site_address','basin'];
+const SITE_FIELDS = ['client','site','site_address','basin','basin_reference'];
 
 let allSites = [];
 let _confirmClient    = null; // exposed by buildCascade
