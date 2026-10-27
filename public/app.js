@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.5.8';
+const APP_VERSION = 'v1.5.9';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -721,16 +721,6 @@ async function generatePermitPDF(formData) {
   const validFrom = fmtDate(formData.valid_from_date, formData.valid_from_time);
   const validTo   = fmtDate(formData.valid_to_date,   formData.valid_to_time);
 
-  // Expiry = submitted_at + 5 days
-  function expiryDate(submittedAt) {
-    const d = submittedAt ? new Date(submittedAt) : new Date();
-    d.setDate(d.getDate() + 5);
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const h = d.getHours(), min = String(d.getMinutes()).padStart(2, '0');
-    return `${dd}/${mm}/${d.getFullYear()} ${h % 12 || 12}:${min} ${h >= 12 ? 'pm' : 'am'}`;
-  }
-  const permitExpiry = expiryDate(formData.submitted_at);
 
   function addPage() { return pdfDoc.addPage([A4_W, A4_H]); }
   function pdfY(topY, h = 0) { return A4_H - topY - h; }
@@ -769,7 +759,7 @@ async function generatePermitPDF(formData) {
   y += 30;
 
   // Note — italic, small
-  const noteText = `(Note: Discharge permit only valid for 5 days, or until rain event prior to ${permitExpiry}.)`;
+  const noteText = `(Note: Discharge permit only valid for 5 days, or until rain event prior to ${validTo}.)`;
   wrapText(noteText, fItal, 8, CW).forEach(line => { drawText(page, line, M, y, { font: fItal, size: 8 }); y += 11; });
   y += 10;
 
