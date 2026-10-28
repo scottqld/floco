@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.6.4';
+const APP_VERSION = 'v1.6.5';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -431,25 +431,33 @@ window.addEventListener('load', () => { sigIssuer._resize(); sigInstall._resize(
 const singlePhotos = {};
 const extraPhotos  = [];
 
-// Single photo (per measurement row)
+// Single shared file input for all per-measurement photo buttons.
+// iOS Safari fires the change event on the wrong input when multiple hidden
+// file inputs are clicked programmatically — one shared input avoids this.
+let activePhotoField = null;
+const sharedPhotoInput = Object.assign(document.createElement('input'), {
+  type: 'file', accept: 'image/*'
+});
+sharedPhotoInput.style.display = 'none';
+document.body.appendChild(sharedPhotoInput);
+
 document.querySelectorAll('.btn-photo').forEach(btn => {
   btn.addEventListener('click', () => {
-    const input = document.querySelector(`.photo-file-input[data-field="${btn.dataset.target}"]`);
-    input.value = '';
-    input.click();
+    activePhotoField = btn.dataset.target;
+    sharedPhotoInput.value = '';
+    sharedPhotoInput.click();
   });
 });
 
-document.querySelectorAll('.photo-file-input').forEach(input => {
-  input.addEventListener('change', async () => {
-    const field = input.dataset.field;
-    const file  = input.files[0];
-    if (!file) return;
-    const dataUrl = await compressImage(file, 1280, 0.85);
-    singlePhotos[field] = dataUrl;
-    renderSinglePreview(field, dataUrl);
-    scheduleSave();
-  });
+sharedPhotoInput.addEventListener('change', async () => {
+  const field = activePhotoField;
+  activePhotoField = null;
+  const file = sharedPhotoInput.files[0];
+  if (!file || !field) return;
+  const dataUrl = await compressImage(file, 1280, 0.85);
+  singlePhotos[field] = dataUrl;
+  renderSinglePreview(field, dataUrl);
+  scheduleSave();
 });
 
 function renderSinglePreview(field, dataUrl) {
