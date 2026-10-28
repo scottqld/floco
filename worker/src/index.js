@@ -1,5 +1,3 @@
-import { generatePDF } from './generatePDF.js';
-
 // ── CORS ──────────────────────────────────────────────────────────────────────
 
 function corsHeaders(env) {
@@ -26,38 +24,6 @@ async function readClients(env) {
 
 async function writeClients(env, list) {
   await env.CLIENTS_KV.put('clients', JSON.stringify(list));
-}
-
-// ── Email body ─────────────────────────────────────────────────────────────────
-
-function buildEmailBody(d) {
-  return [
-    'PERMIT TO DISCHARGE – FRM013',
-    '==============================',
-    `Permit Reference: ${d.permit_reference || ''}`,
-    `Client:           ${d.client || ''}`,
-    `Site:             ${d.site || ''}`,
-    `Site Address:     ${d.site_address || ''}`,
-    `Basin:            ${d.basin || ''}`,
-    '',
-    `Discharge To:     ${d.discharge_to || ''}`,
-    `Valid From:       ${d.valid_from_date || ''} ${d.valid_from_time || ''}`,
-    `Valid To:         ${d.valid_to_date || ''} ${d.valid_to_time || ''}`,
-    '',
-    'Water Quality – Initial Test',
-    `  pH: ${d.initial_test_ph || ''}  NTU: ${d.initial_test_ntu || ''}`,
-    'Water Quality – After Treatment',
-    `  pH: ${d.after_treatment_ph || ''}  NTU: ${d.after_treatment_ntu || ''}`,
-    '',
-    `Issued By:  ${d.issued_by_name || ''}`,
-    `Issued To:  ${d.issued_to_name || ''}`,
-    '',
-    `Special Instructions:\n${d.special_instructions || ''}`,
-    '',
-    `Additional photos attached: ${(d.additional_photos || []).length}`,
-    '',
-    'The completed permit document is attached.',
-  ].join('\n');
 }
 
 // ── Submission log ─────────────────────────────────────────────────────────────
@@ -171,81 +137,10 @@ export default {
     if (method === 'POST' && url.pathname === '/api/submit') {
       try {
         const formData = await request.json();
-
-        const docBuffer = await generatePDF(formData);
-
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        const filename  = `Permit-to-Discharge-${timestamp}.pdf`;
-
-        const attachments = [
-          {
-            filename,
-            content: docBuffer.toString('base64'),
-          },
-        ];
-
-        // Attach reading photos
-        const readingPhotos = [
-          ['initial_ph_photo',  'Initial-pH'],
-          ['initial_ntu_photo', 'Initial-NTU'],
-          ['after_ph_photo',    'After-pH'],
-          ['after_ntu_photo',   'After-NTU'],
-        ];
-        readingPhotos.forEach(([field, label]) => {
-          const dataUrl = formData[field];
-          if (!dataUrl) return;
-          const m = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
-          if (m) attachments.push({ filename: `${label}.${m[1]}`, content: m[2] });
-        });
-
-        if (Array.isArray(formData.additional_photos)) {
-          formData.additional_photos.forEach((photoDataUrl, i) => {
-            const m = photoDataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
-            if (m) {
-              attachments.push({
-                filename: `site-photo-${i + 1}.${m[1]}`,
-                content:  m[2],
-              });
-            }
-          });
-        }
-
-        const issuedBy  = formData.issued_by_name  || 'Unknown';
-        const validFrom = formData.valid_from_date  || '';
-        const toList = formData.to_email
-          ? [{ email: formData.to_email }]
-          : (env.EMAIL_TO || '').split(',').map(e => ({ email: e.trim() })).filter(r => r.email);
-        const ccList = formData.cc_email ? [{ email: formData.cc_email }] : [];
-
-        const ref = formData.permit_reference || '';
-        const emailPayload = {
-          from:             { email: env.EMAIL_FROM },
-          to:               toList.map(e => ({ email: e.email })),
-          subject:          `${ref ? ref + ' · ' : ''}Permit to Discharge – ${issuedBy} – ${validFrom}`,
-          content:          [{ type: 'text/plain', value: buildEmailBody(formData) }],
-          attachments:      attachments.map(a => ({ content: a.content, filename: a.filename, type: 'application/pdf', disposition: 'attachment' })),
-        };
-        if (ccList.length) emailPayload.cc = ccList.map(e => ({ email: e.email }));
-
-        const sgRes = await fetch('https://api.sendgrid.com/v3/mail/send', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${env.SENDGRID_API_KEY}`,
-            'Content-Type':  'application/json',
-          },
-          body: JSON.stringify(emailPayload),
-        });
-
-        if (!sgRes.ok) {
-          const errText = await sgRes.text();
-          throw new Error(`SendGrid error ${sgRes.status}: ${errText}`);
-        }
-
         await logSubmission(env, formData, timestamp);
-
-        return json({ success: true, message: 'Permit submitted and emailed successfully.' }, 200, env);
+        return json({ success: true }, 200, env);
       } catch (err) {
-        console.error('Submit error:', err);
         return json({ success: false, message: err.message }, 500, env);
       }
     }

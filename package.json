@@ -4,7 +4,9 @@
   "description": "PWA for FRM013 Permit to Discharge form",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "dependencies": {
     "docx": "^8.5.0",
@@ -12,5 +14,8 @@
     "express": "^4.19.2",
     "nodemailer": "^8.0.7",
     "pdfkit": "^0.18.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.90.0"
   }
 }
