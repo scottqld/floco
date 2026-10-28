@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.6.6';
+const APP_VERSION = 'v1.6.7';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
