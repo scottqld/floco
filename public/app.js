@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.6.3';
+const APP_VERSION = 'v1.6.4';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -754,7 +754,7 @@ async function generatePermitPDF(formData) {
     const res = await fetch('floco_logo.png');
     const buf = new Uint8Array(await res.arrayBuffer());
     const img = await pdfDoc.embedPng(buf);
-    const dims = img.scaleToFit(160, 100);
+    const dims = img.scaleToFit(220, 70);
     page.drawImage(img, { x: M + (CW - dims.width) / 2, y: pdfY(y, dims.height), width: dims.width, height: dims.height });
     y += dims.height + 16;
   } catch { y += 116; }
