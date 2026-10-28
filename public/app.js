@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.6.2';
+const APP_VERSION = 'v1.6.3';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -295,17 +295,22 @@ function updateAfterTreatmentVisibility() {
 }
 
 // Wire up live badge updates + draft save on each reading field
+// Listen to both 'input' and 'change' — iOS Safari fires 'change' on number
+// inputs when the user taps Done on the keyboard, not always 'input'.
 [
   ['initial_test_ph',    'badge_initial_ph',  'ph'],
   ['initial_test_ntu',   'badge_initial_ntu', 'ntu'],
   ['after_treatment_ph', 'badge_after_ph',    'ph'],
   ['after_treatment_ntu','badge_after_ntu',   'ntu'],
 ].forEach(([inputId, badgeId, type]) => {
-  document.getElementById(inputId)?.addEventListener('input', () => {
+  const handler = () => {
     updateBadge(inputId, badgeId, type);
     if (inputId.startsWith('initial_')) updateAfterTreatmentVisibility();
     scheduleSave();
-  });
+  };
+  const el = document.getElementById(inputId);
+  el?.addEventListener('input',  handler);
+  el?.addEventListener('change', handler);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1279,6 +1284,12 @@ function collectData() {
   const fd = new FormData(form);
   const data = {};
   for (const [k, v] of fd.entries()) data[k] = v;
+  // Explicitly read reading fields from the DOM — iOS Safari can drop values
+  // from FormData for inputs that were inside a previously-inert or hidden element.
+  ['initial_test_ph', 'initial_test_ntu', 'after_treatment_ph', 'after_treatment_ntu'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) data[id] = el.value;
+  });
   data.issued_by_signature = sigIssuer.toDataURL();
   data.initial_ph_photo  = singlePhotos.initial_ph_photo  ?? null;
   data.initial_ntu_photo = singlePhotos.initial_ntu_photo ?? null;
@@ -1756,6 +1767,7 @@ function applySite(site, silent) {
   updateSaveBtn();
   lockSiteFields();
   unlockPermitBody();
+  updateAfterTreatmentVisibility();
   try { localStorage.setItem(LAST_SITE_KEY, site.id); } catch {}
   if (!silent) {
     showToast(`Loaded: ${site.client} – ${site.site}`, 'success');
