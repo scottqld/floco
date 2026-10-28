@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.6.0';
+const APP_VERSION = 'v1.6.2';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -792,29 +792,34 @@ async function generatePermitPDF(formData) {
   });
   y += 12;
 
-  // Water quality table
-  const WQ = [120, 75, 75, CW - 120 - 75 - 75];
-  const PHOTO_W = WQ[3] - PAD * 2, PHOTO_H = Math.min(Math.round(PHOTO_W * 3 / 4), 90);
+  // Water quality table — 5 cols: Reading | pH | NTU | pH Photo | NTU Photo
+  const PHOTO_COL = (CW - 120 - 75 - 75) / 2;
+  const WQ = [120, 75, 75, PHOTO_COL, PHOTO_COL];
+  const PHOTO_W = PHOTO_COL - PAD * 2, PHOTO_H = Math.min(Math.round(PHOTO_W * 3 / 4), 90);
   const DATA_ROW = PHOTO_H + PAD * 2, HDR_ROW = 20;
 
   if (y + HDR_ROW + DATA_ROW * 2 > A4_H - M) { page = addPage(); y = M; }
 
   let cx = M;
-  ['Reading', 'pH', 'NTU', ''].forEach((h, i) => { cell(page, cx, y, WQ[i], HDR_ROW, h, { bg: C_GREY, bold: true }); cx += WQ[i]; });
+  ['Reading', 'pH', 'NTU', 'pH Photo', 'NTU Photo'].forEach((h, i) => { cell(page, cx, y, WQ[i], HDR_ROW, h, { bg: C_GREY, bold: true }); cx += WQ[i]; });
   y += HDR_ROW;
 
-  for (const [lbl, ph, ntu, photo] of [
-    ['Initial Test',    formData.initial_test_ph,    formData.initial_test_ntu,    formData.initial_ph_photo],
-    ['After Treatment', formData.after_treatment_ph, formData.after_treatment_ntu, formData.after_ph_photo],
+  for (const [lbl, ph, ntu, phPhoto, ntuPhoto] of [
+    ['Initial Test',    formData.initial_test_ph,    formData.initial_test_ntu,    formData.initial_ph_photo,  formData.initial_ntu_photo],
+    ['After Treatment', formData.after_treatment_ph, formData.after_treatment_ntu, formData.after_ph_photo,    formData.after_ntu_photo],
   ]) {
     cx = M;
     cell(page, cx, y, WQ[0], DATA_ROW, lbl); cx += WQ[0];
     cell(page, cx, y, WQ[1], DATA_ROW, ph  || ''); cx += WQ[1];
     cell(page, cx, y, WQ[2], DATA_ROW, ntu || ''); cx += WQ[2];
     cell(page, cx, y, WQ[3], DATA_ROW, null);
-    const pic = parsePic(photo);
-    if (pic) { const img = await embedImg(pic); if (img) { const d = img.scaleToFit(PHOTO_W, PHOTO_H); page.drawImage(img, { x: cx + PAD, y: pdfY(y + PAD, d.height), width: d.width, height: d.height }); } }
+    const pic1 = parsePic(phPhoto);
+    if (pic1) { const img = await embedImg(pic1); if (img) { const d = img.scaleToFit(PHOTO_W, PHOTO_H); page.drawImage(img, { x: cx + PAD, y: pdfY(y + PAD, d.height), width: d.width, height: d.height }); } }
     cx += WQ[3];
+    cell(page, cx, y, WQ[4], DATA_ROW, null);
+    const pic2 = parsePic(ntuPhoto);
+    if (pic2) { const img = await embedImg(pic2); if (img) { const d = img.scaleToFit(PHOTO_W, PHOTO_H); page.drawImage(img, { x: cx + PAD, y: pdfY(y + PAD, d.height), width: d.width, height: d.height }); } }
+    cx += WQ[4];
     y += DATA_ROW;
   }
   y += 10;

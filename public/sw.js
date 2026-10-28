@@ -1,5 +1,5 @@
-const CACHE = 'permit-v1';
-const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/manifest.json'];
+const CACHE = 'permit-v2';
+const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/config.js', '/manifest.json', '/floco_logo.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
