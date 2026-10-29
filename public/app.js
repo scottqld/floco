@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.7.2';
+const APP_VERSION = 'v1.7.3';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -250,10 +250,10 @@ function clearDraft() {
 // 3. PASS/FAIL INDICATORS
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Limits (dewatering): pH 6.5–8.5 | NTU ≤375 (caution up to 412.5)
+// Limits: pH 6.5–8.5 | NTU ≤60
 const LIMITS = {
   ph:  { lo: 6.5, hi: 8.5 },
-  ntu: { pass: 375, caution: 412.5 },
+  ntu: { pass: 60 },
 };
 
 function updateBadge(inputId, badgeId, type) {
@@ -272,9 +272,8 @@ function updateBadge(inputId, badgeId, type) {
     if (v >= LIMITS.ph.lo && v <= LIMITS.ph.hi) { cls = 'pass';    label = '✓ Pass'; }
     else                                          { cls = 'fail';    label = '✗ Fail'; }
   } else {
-    if (v <= LIMITS.ntu.pass)                     { cls = 'pass';    label = '✓ Pass'; }
-    else if (v <= LIMITS.ntu.caution)             { cls = 'caution'; label = '⚠ Check'; }
-    else                                          { cls = 'fail';    label = '✗ Fail'; }
+    if (v <= LIMITS.ntu.pass) { cls = 'pass'; label = '✓ Pass'; }
+    else                      { cls = 'fail'; label = '✗ Fail'; }
   }
   badge.textContent = label;
   badge.className = `reading-badge ${cls}`;
