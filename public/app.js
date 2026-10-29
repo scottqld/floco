@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.6.8';
+const APP_VERSION = 'v1.6.9';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -89,6 +89,7 @@ async function submitCode() {
   if (valid) {
     localStorage.setItem(CODE_KEY, code);
     hideGate();
+    initClients();
   } else {
     showGate('Incorrect access code — please try again.');
   }
