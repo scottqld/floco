@@ -170,6 +170,9 @@ form { padding: 12px 12px 0; max-width: 680px; margin: 0 auto; }
 .form-section--datetime {
   padding: 14px 18px;
 }
+.section-hidden {
+  display: none;
+}
 
 .section-title {
   display: flex;

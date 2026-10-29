@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.6.7';
+const APP_VERSION = 'v1.6.8';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -291,7 +291,7 @@ function updateAfterTreatmentVisibility() {
   const section = document.getElementById('afterTreatmentSection');
   if (!section) return;
   const pass = initialTestsPass();
-  section.hidden = pass;
+  section.classList.toggle('section-hidden', pass);
 }
 
 // Wire up live badge updates + draft save on each reading field
@@ -1289,11 +1289,18 @@ form.addEventListener('submit', async e => {
 });
 
 function collectData() {
+  // Blur any focused input so iOS commits keyboard value to el.value before we read it.
+  if (document.activeElement && document.activeElement !== document.body) {
+    document.activeElement.blur();
+  }
   const fd = new FormData(form);
   const data = {};
   for (const [k, v] of fd.entries()) data[k] = v;
-  // Explicitly read reading fields from the DOM — iOS Safari can drop values
-  // from FormData for inputs that were inside a previously-inert or hidden element.
+  // Explicitly read ALL inputs from DOM — iOS Safari can drop values from FormData
+  // for inputs inside elements that were previously inert or hidden.
+  form.querySelectorAll('input, textarea, select').forEach(el => {
+    if (el.name) data[el.name] = el.value;
+  });
   ['initial_test_ph', 'initial_test_ntu', 'after_treatment_ph', 'after_treatment_ntu'].forEach(id => {
     const el = document.getElementById(id);
     if (el) data[id] = el.value;
