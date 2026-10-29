@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.7.1';
+const APP_VERSION = 'v1.7.2';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -292,6 +292,8 @@ function updateAfterTreatmentVisibility() {
   const section = document.getElementById('afterTreatmentSection');
   if (!section) return;
   const pass = initialTestsPass();
+  // Toggle both: hidden attribute (old cached HTML) and CSS class (new HTML).
+  section.hidden = pass;
   section.classList.toggle('section-hidden', pass);
 }
 
