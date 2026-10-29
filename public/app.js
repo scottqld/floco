@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.6.9';
+const APP_VERSION = 'v1.7.0';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -296,8 +296,9 @@ function updateAfterTreatmentVisibility() {
 }
 
 // Wire up live badge updates + draft save on each reading field
-// Listen to both 'input' and 'change' — iOS Safari fires 'change' on number
-// inputs when the user taps Done on the keyboard, not always 'input'.
+// Listen to 'input', 'change', and 'blur' — iOS Safari is inconsistent about
+// which events fire for number inputs; blur fires reliably on every iOS version
+// when the user taps Done or moves focus away.
 [
   ['initial_test_ph',    'badge_initial_ph',  'ph'],
   ['initial_test_ntu',   'badge_initial_ntu', 'ntu'],
@@ -312,6 +313,7 @@ function updateAfterTreatmentVisibility() {
   const el = document.getElementById(inputId);
   el?.addEventListener('input',  handler);
   el?.addEventListener('change', handler);
+  el?.addEventListener('blur',   handler);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
