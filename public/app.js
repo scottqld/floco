@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.7.3';
+const APP_VERSION = 'v1.7.4';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -1302,8 +1302,11 @@ function collectData() {
   for (const [k, v] of fd.entries()) data[k] = v;
   // Explicitly read ALL inputs from DOM — iOS Safari can drop values from FormData
   // for inputs inside elements that were previously inert or hidden.
+  // Skip unchecked radio/checkbox inputs so they don't overwrite the correct checked value.
   form.querySelectorAll('input, textarea, select').forEach(el => {
-    if (el.name) data[el.name] = el.value;
+    if (!el.name) return;
+    if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) return;
+    data[el.name] = el.value;
   });
   ['initial_test_ph', 'initial_test_ntu', 'after_treatment_ph', 'after_treatment_ntu'].forEach(id => {
     const el = document.getElementById(id);
