@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.7.7';
+const APP_VERSION = 'v1.7.8';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -486,22 +486,41 @@ function renderSinglePreview(field, dataUrl) {
   previewEl.appendChild(wrap);
 }
 
+// ── Global photo picker — ONE input for all buttons; avoids iOS multi-input bug ──
+let globalPhotoHandler = null;
+const globalPhotoInput = (() => {
+  const el = document.createElement('input');
+  el.type = 'file'; el.accept = 'image/*'; el.style.display = 'none';
+  document.body.appendChild(el);
+  el.addEventListener('change', async () => {
+    const handler = globalPhotoHandler;
+    globalPhotoHandler = null;
+    const files = Array.from(el.files);
+    el.value = '';
+    if (handler && files.length) await handler(files);
+  });
+  return el;
+})();
+
+function openPhotoPicker(multi, handler) {
+  globalPhotoHandler = handler;
+  globalPhotoInput.multiple = !!multi;
+  globalPhotoInput.value = '';
+  globalPhotoInput.click();
+}
+
 // Extra photos
-const extraPhotoInput = document.getElementById('extraPhotoInput');
 const extraPhotoGrid  = document.getElementById('extraPhotoGrid');
 
 document.getElementById('addPhotoBtn').addEventListener('click', () => {
-  extraPhotoInput.value = '';
-  extraPhotoInput.click();
-});
-
-extraPhotoInput.addEventListener('change', async () => {
-  for (const file of Array.from(extraPhotoInput.files)) {
-    const dataUrl = await compressImage(file, 1280, 0.85);
-    extraPhotos.push(dataUrl);
-    addExtraThumb(dataUrl, extraPhotos.length - 1);
-    scheduleSave();
-  }
+  openPhotoPicker(true, async (files) => {
+    for (const file of files) {
+      const dataUrl = await compressImage(file, 1280, 0.85);
+      extraPhotos.push(dataUrl);
+      addExtraThumb(dataUrl, extraPhotos.length - 1);
+      scheduleSave();
+    }
+  });
 });
 
 function addExtraThumb(dataUrl, index) {
@@ -529,7 +548,6 @@ function addExtraThumb(dataUrl, index) {
 
 // ── Install photos (max 4) ─────────────────────────────────────────────────
 const installPhotos   = [];
-const instPhotoInput  = document.getElementById('instPhotoInput');
 const instPhotoGrid   = document.getElementById('instPhotoGrid');
 
 function updateInstAddBtn() {
@@ -539,18 +557,15 @@ function updateInstAddBtn() {
 
 document.getElementById('instAddPhotoBtn').addEventListener('click', () => {
   if (installPhotos.length >= 4) { showToast('Maximum 4 photos allowed.', 'error'); return; }
-  instPhotoInput.value = '';
-  instPhotoInput.click();
-});
-
-instPhotoInput.addEventListener('change', async () => {
-  const remaining = 4 - installPhotos.length;
-  for (const file of Array.from(instPhotoInput.files).slice(0, remaining)) {
-    const dataUrl = await compressImage(file, 1280, 0.85);
-    installPhotos.push(dataUrl);
-    addInstPhotoThumb(dataUrl, installPhotos.length - 1);
-  }
-  updateInstAddBtn();
+  openPhotoPicker(true, async (files) => {
+    const remaining = 4 - installPhotos.length;
+    for (const file of files.slice(0, remaining)) {
+      const dataUrl = await compressImage(file, 1280, 0.85);
+      installPhotos.push(dataUrl);
+      addInstPhotoThumb(dataUrl, installPhotos.length - 1);
+    }
+    updateInstAddBtn();
+  });
 });
 
 function addInstPhotoThumb(dataUrl, index) {
@@ -590,38 +605,20 @@ function setMaintSinglePhoto(key, dataUrl) {
   preview.appendChild(wrap);
 }
 
-// Single shared input for maint before/after — multiple hidden inputs with
-// programmatic .click() causes iOS to fire change on the wrong input.
-let activeMaintPhotoKey = null;
-const sharedMaintPhotoInput = Object.assign(document.createElement('input'), {
-  type: 'file', accept: 'image/*',
-});
-sharedMaintPhotoInput.style.display = 'none';
-document.body.appendChild(sharedMaintPhotoInput);
-
 ['maintBeforePhotoBtn', 'maintAfterPhotoBtn'].forEach(btnId => {
   const btn = document.getElementById(btnId);
   if (!btn) return;
   const key = btnId === 'maintBeforePhotoBtn' ? 'before' : 'after';
   btn.addEventListener('click', () => {
-    activeMaintPhotoKey = key;
-    sharedMaintPhotoInput.value = '';
-    sharedMaintPhotoInput.click();
+    openPhotoPicker(false, async ([file]) => {
+      const dataUrl = await compressImage(file, 1280, 0.85);
+      setMaintSinglePhoto(key, dataUrl);
+    });
   });
-});
-
-sharedMaintPhotoInput.addEventListener('change', async () => {
-  const key  = activeMaintPhotoKey;
-  activeMaintPhotoKey = null;
-  const file = sharedMaintPhotoInput.files[0];
-  if (!file || !key) return;
-  const dataUrl = await compressImage(file, 1280, 0.85);
-  setMaintSinglePhoto(key, dataUrl);
 });
 
 // ── Maintenance extra photos (max 4) ────────────────────────────────────────
 const maintExtraPhotos = [];
-const maintPhotoInput  = document.getElementById('maintPhotoInput');
 const maintPhotoGrid   = document.getElementById('maintPhotoGrid');
 
 function updateMaintAddBtn() {
@@ -631,19 +628,15 @@ function updateMaintAddBtn() {
 
 document.getElementById('maintAddPhotoBtn').addEventListener('click', () => {
   if (maintExtraPhotos.length >= 4) { showToast('Maximum 4 photos allowed.', 'error'); return; }
-  maintPhotoInput.click();
-});
-
-maintPhotoInput.addEventListener('change', async () => {
-  const files = Array.from(maintPhotoInput.files);
-  const remaining = 4 - maintExtraPhotos.length;
-  for (const file of files.slice(0, remaining)) {
-    const dataUrl = await compressImage(file, 1280, 0.85);
-    maintExtraPhotos.push(dataUrl);
-    addMaintExtraThumb(dataUrl, maintExtraPhotos.length - 1);
-  }
-  updateMaintAddBtn();
-  maintPhotoInput.value = '';
+  openPhotoPicker(true, async (files) => {
+    const remaining = 4 - maintExtraPhotos.length;
+    for (const file of files.slice(0, remaining)) {
+      const dataUrl = await compressImage(file, 1280, 0.85);
+      maintExtraPhotos.push(dataUrl);
+      addMaintExtraThumb(dataUrl, maintExtraPhotos.length - 1);
+    }
+    updateMaintAddBtn();
+  });
 });
 
 function addMaintExtraThumb(dataUrl, index) {
