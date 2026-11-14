@@ -1,6 +1,7 @@
+// @ts-check
 'use strict';
 
-const APP_VERSION = 'v1.7.9';
+const APP_VERSION = 'v1.8.0';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -133,6 +134,13 @@ function apiFetch(path, options = {}) {
 // 1. IMAGE COMPRESSION
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * Compress and resize an image file to a JPEG data URL.
+ * @param {File} file
+ * @param {number} maxPx - max width or height in pixels
+ * @param {number} quality - JPEG quality 0–1
+ * @returns {Promise<string>} data URL
+ */
 async function compressImage(file, maxPx, quality) {
   // createImageBitmap respects EXIF orientation natively — no manual rotation needed
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(
@@ -502,6 +510,12 @@ const globalPhotoInput = (() => {
   return el;
 })();
 
+/**
+ * Open the device file picker and pass selected files to handler.
+ * Uses a single global input to avoid iOS multi-input routing bug.
+ * @param {boolean} multi - allow multiple selection
+ * @param {(files: File[]) => Promise<void>} handler
+ */
 function openPhotoPicker(multi, handler) {
   globalPhotoHandler = handler;
   globalPhotoInput.multiple = !!multi;
@@ -589,6 +603,11 @@ function addInstPhotoThumb(dataUrl, index) {
 // ── Maintenance / Refill single photos (before & after) ────────────────────
 const maintSinglePhotos = {};
 
+/**
+ * Store and display a single maintenance before/after photo.
+ * @param {'before'|'after'} key
+ * @param {string} dataUrl - base64 image data URL
+ */
 function setMaintSinglePhoto(key, dataUrl) {
   maintSinglePhotos[key] = dataUrl;
   const preview = document.getElementById(`maint_${key}_preview`);
@@ -695,6 +714,11 @@ function setFormDateTime() {
 // PDF GENERATION (browser-side, pdf-lib from CDN)
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * Generate the PTD permit PDF.
+ * @param {Record<string, any>} formData
+ * @returns {Promise<Uint8Array>}
+ */
 async function generatePermitPDF(formData) {
   const { PDFDocument, StandardFonts, rgb } = PDFLib;
 
@@ -889,6 +913,7 @@ async function generatePermitPDF(formData) {
 }
 
 // ── Install data collector ─────────────────────────────────────────────────
+/** @returns {Record<string, any>} */
 function collectInstallData() {
   const fd = new FormData(form);
   const data = {};
@@ -906,6 +931,10 @@ function collectInstallData() {
 }
 
 // ── Install PDF generator ──────────────────────────────────────────────────
+/**
+ * @param {Record<string, any>} d
+ * @returns {Promise<Uint8Array>}
+ */
 async function generateInstallPDF(d) {
   const { PDFDocument, StandardFonts, rgb } = PDFLib;
 
@@ -1031,6 +1060,7 @@ async function generateInstallPDF(d) {
 }
 
 // ── Maint data collector ────────────────────────────────────────────────────
+/** @returns {Record<string, any>} */
 function collectMaintData() {
   const fd = new FormData(form);
   const data = {};
@@ -1045,6 +1075,10 @@ function collectMaintData() {
 }
 
 // ── Maint PDF generator ─────────────────────────────────────────────────────
+/**
+ * @param {Record<string, any>} d
+ * @returns {Promise<Uint8Array>}
+ */
 async function generateMaintPDF(d) {
   const { PDFDocument, StandardFonts, rgb } = PDFLib;
 
@@ -1297,6 +1331,7 @@ form.addEventListener('submit', async e => {
   }
 });
 
+/** @returns {Record<string, any>} */
 function collectData() {
   // Blur any focused input so iOS commits keyboard value to el.value before we read it.
   if (document.activeElement && document.activeElement !== document.body) {
