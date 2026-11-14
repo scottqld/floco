@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.7.5';
+const APP_VERSION = 'v1.7.6';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -590,22 +590,34 @@ function setMaintSinglePhoto(key, dataUrl) {
   preview.appendChild(wrap);
 }
 
-function initMaintSinglePhoto(btnId, inputId, key) {
-  const btn   = document.getElementById(btnId);
-  const input = document.getElementById(inputId);
-  if (!btn || !input) return;
-  btn.addEventListener('click', () => input.click());
-  input.addEventListener('change', async () => {
-    const file = input.files[0];
-    if (!file) return;
-    const dataUrl = await compressPhoto(file);
-    setMaintSinglePhoto(key, dataUrl);
-    input.value = '';
-  });
-}
+// Single shared input for maint before/after — multiple hidden inputs with
+// programmatic .click() causes iOS to fire change on the wrong input.
+let activeMaintPhotoKey = null;
+const sharedMaintPhotoInput = Object.assign(document.createElement('input'), {
+  type: 'file', accept: 'image/*',
+});
+sharedMaintPhotoInput.style.display = 'none';
+document.body.appendChild(sharedMaintPhotoInput);
 
-initMaintSinglePhoto('maintBeforePhotoBtn', 'maintBeforePhotoInput', 'before');
-initMaintSinglePhoto('maintAfterPhotoBtn',  'maintAfterPhotoInput',  'after');
+['maintBeforePhotoBtn', 'maintAfterPhotoBtn'].forEach(btnId => {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  const key = btnId === 'maintBeforePhotoBtn' ? 'before' : 'after';
+  btn.addEventListener('click', () => {
+    activeMaintPhotoKey = key;
+    sharedMaintPhotoInput.value = '';
+    sharedMaintPhotoInput.click();
+  });
+});
+
+sharedMaintPhotoInput.addEventListener('change', async () => {
+  const key  = activeMaintPhotoKey;
+  activeMaintPhotoKey = null;
+  const file = sharedMaintPhotoInput.files[0];
+  if (!file || !key) return;
+  const dataUrl = await compressPhoto(file);
+  setMaintSinglePhoto(key, dataUrl);
+});
 
 // ── Maintenance extra photos (max 4) ────────────────────────────────────────
 const maintExtraPhotos = [];
