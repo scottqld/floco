@@ -1,4 +1,4 @@
-const CACHE = 'permit-v16';
+const CACHE = 'permit-v17';
 const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/config.js', '/manifest.json', '/floco_logo.png'];
 
 self.addEventListener('install', e => {

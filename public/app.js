@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.7.8';
+const APP_VERSION = 'v1.7.9';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -1145,17 +1145,17 @@ async function generateMaintPDF(d) {
   if(beforePic||afterPic){
     const PHOTO_H=140, COL_W=(CW-10)/2, LABEL_H=18;
     if(y+PHOTO_H+LABEL_H+10>A4_H-M){page=addPage();y=M;}
-    [['Before',beforePic,0],['After',afterPic,COL_W+10]].forEach(([lbl,pic,dx])=>{
+    for(const [lbl,pic,dx] of [['Before',beforePic,0],['After',afterPic,COL_W+10]]){
       cell(page, M+dx, y, COL_W, LABEL_H, lbl, {bg:C_GREY, bold:true});
       drawRect(page, M+dx, y+LABEL_H, COL_W, PHOTO_H);
       if(pic){
-        embedImg(pic).then(img=>{
-          if(!img)return;
+        const img=await embedImg(pic);
+        if(img){
           const dims=img.scaleToFit(COL_W-PAD*2, PHOTO_H-PAD*2);
           page.drawImage(img,{x:M+dx+PAD+(COL_W-PAD*2-dims.width)/2, y:pdfY(y+LABEL_H+PAD,dims.height), width:dims.width, height:dims.height});
-        });
+        }
       }
-    });
+    }
     y+=PHOTO_H+LABEL_H+10;
   }
 
