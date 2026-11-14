@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = 'v1.7.6';
+const APP_VERSION = 'v1.7.7';
 
 // API base URL — empty for local dev, set via config.js for production
 const API = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
@@ -615,7 +615,7 @@ sharedMaintPhotoInput.addEventListener('change', async () => {
   activeMaintPhotoKey = null;
   const file = sharedMaintPhotoInput.files[0];
   if (!file || !key) return;
-  const dataUrl = await compressPhoto(file);
+  const dataUrl = await compressImage(file, 1280, 0.85);
   setMaintSinglePhoto(key, dataUrl);
 });
 
@@ -638,7 +638,7 @@ maintPhotoInput.addEventListener('change', async () => {
   const files = Array.from(maintPhotoInput.files);
   const remaining = 4 - maintExtraPhotos.length;
   for (const file of files.slice(0, remaining)) {
-    const dataUrl = await compressPhoto(file);
+    const dataUrl = await compressImage(file, 1280, 0.85);
     maintExtraPhotos.push(dataUrl);
     addMaintExtraThumb(dataUrl, maintExtraPhotos.length - 1);
   }
